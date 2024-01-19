@@ -1,0 +1,322 @@
+
+		      ldb - LUnix debugger version 1.0
+		      ================================
+
+Available (commandline-) commands:
+
+ b
+   break
+     Send character (ascii code 3) to debugged process.
+
+ c
+   continue
+     Continue process (CTRL+s stopps it)
+
+ d [[ mid: ] address ]
+   disassemble
+     Disassemble process-code (or any other memory address).
+     With no argument d continues disassembling at the last position.
+     Default for mid is the process' mid.
+     Address is the relative address in the mid-memory area or, if no
+     mid is given the address is relative/absolute/original to the
+     process' startaddress (as defined by the used with the 'm'-command).
+
+ f dev:filename
+   file
+     Load exacutable file for debugging.
+
+ h [[ mid: ] address ]
+   hexdump
+     Print a hexdump, syntax like 'd'
+
+ i
+   info
+     Print process information
+
+ m[aro]
+   mode
+     ma absolute memory addresses
+     mr relative memory addresses
+     mo original memory addresses
+      (display mode of disassembler)
+
+ r [ args ]
+   run
+     Run a loaded process with 'args' as commandline parameters.
+
+ s #signum
+   signal
+     Sends signal #signum to debugged process.
+
+ t
+   tick
+     Lets the debugged process run for exactly one time slice.
+     (or till there is a 'jsr$$9012' in the code, wich can be used
+      like breakpoints for debugging)
+     NOTE: ldb waits till the process is interrupted while running
+	   (if the process is blocked ldb will wait till it is
+	    unblocked again)
+
+examples:
+---------
+
+@> ldb
+LUnix Debug Version 1.0
+  by Poldi  4.3.1996
+ldb> f @:prim		 { load 'prim' }
+ldb> r 10000,10		 { prim 10000,10 }
+ldb> i			 {info}
+pc=38:0046 sr=00  a=00 x=00 y=00
+ { mid:reladr ,status register,akku,x-register,y-register }
+stack 17 90
+ { $9018=suicide is the return-address, if there is a rts }
+zp 57 8d 38 35 30 3a 8e 00 59 2f 8d
+ { zero page starting with address $57: ...10 bytes }
+ldb> d 38:46
+ { begin disassembling at pc=38:0046 taken from info }
+$c846 lda#$c8
+$c848 jsr$$9051
+$c84b jmp$$c991
+$c84e rts
+$c84f lda#$00
+$c851 sta$$59
+$c853 sta$$5a
+$c855 sta$$5b
+$c857 sta$$5c
+$c859 ldii$57
+ldb> mr	  { switch to relative-address-mode }
+ldb> h 0  { hexdump starting at relative addr. 0 }
+$0000  38 f5 fa fa 00 00 00 00 8UZZ....
+$0008  00 46 00 00 00 00 00 00 .f......
+$0010  00 00 00 00 00 00 00 00 ........
+$0018  00 00 4c 1b 90 00 00 00 ..l.....
+$0020  00 00 00 00 00 00 00 00 ........
+$0028  00 00 00 00 00 00 00 00 ........
+$0030  00 00 00 00 00 00 00 00 ........
+$0038  50 52 49 4d 00 00 00 00 prim....	 { 'prim' CMD name in the file }
+$0040  17 27 00 00 80 00 a9 c8 .'....)h
+$0048  20 51 90 4c 91 39 60 a9	q.l.9@)
+ldb> f @:ldb  { load 'ldb' }
+ldb> mo { switch to original address-mode }
+ldb> d	{ disassemble code }
+$7000  38 00 00 00 40 57 06 00 8...@w..
+$7008  1c 40 00 00 00 00 00 00 .@......
+$7010  00 00 00 00 00 00 00 00 ........
+$7018  00 00 4c 48 70 4c 52 70 ..lhPlrP
+$7020  00 00 00 00 00 00 00 00 ........
+$7028  00 00 00 00 00 00 00 00 ........
+$7030  00 00 00 00 00 00 00 00 ........
+$7038  4c 44 42 00 00 00 00 00 ldb.....
+$7040 lda#$70
+$7042 jsr$$9051
+ldb> d { continue disassembling }
+$7045 jmp$$79aa
+$7048 se i
+$7049 lda#$03
+$704b ldx$$7001
+$704e jsr$$902d
+$7051 rti
+$7052 jmp$$901b
+$7055 pjp$$70a2
+$7058  30 31 32 33 34 35 36 37 01234567
+$7060  38 39 41 42 43 44 45 46 89abcdef
+ldb> d { continue disassembling }
+$7068  01 04 07 0a 0d 10 13 16 ........
+$7070  00 00 00 00 00 00 00 00 ........
+$7078  00 00 00 00 00 00 00 00 ........
+$7080  00 00 00 00 00 00 00 00 ........
+$7088  00 00 00 00 00 00 00 00 ........
+$7090  00 00 00 00 00 00 00 00 ........
+$7098  00 00 00 00 00 00 00 00 ........
+$70a0  00 00		       ..
+$70a2 and#$3f
+$70a4 =	 $$70d2
+ldb> d { continue disassembling }
+$70a6 cmp#$20
+$70a8 bcs$$70ac
+$70aa ora#$40
+$70ac jsr$$9069
+$70af bcc$$70d2
+$70b1 jsr$$70b7
+$70b4 jmp$$901b
+$70b7 bit$$7071
+$70ba bpl$$70d2
+$70bc lda$$7075
+----------------------------------------
+ldb> f @:prim	 { load file 'prim' }
+ldb> r 10000,10	 { exec 'prim 10000,10' }
+ldb> i		 { info }
+pc=2d:0046 sr=00  a=00 x=00 y=00
+stack 17 90
+zp 57 38 a9 20 20 ac 38 a6 57 e8 86
+ldb> t		 { let prim run for one tick }
+ldb> i		 { print info agin }
+pc=2d:0170 sr=23  a=00 x=00 y=04
+stack 3d 2f 17 90
+zp 57 0a 00 d0 01 00 00 01 01 00 00
+ldb> t
+ldb> i
+pc=2d:0154 sr=23  a=00 x=00 y=07
+stack 3d 2f 17 90
+zp 57 0a 00 80 03 00 00 13 04 00 00
+ldb> t
+ldb> i
+pc=2d:0158 sr=23  a=00 x=00 y=02
+stack 3d 2f 17 90
+zp 57 0a 00 e4 00 00 00 af 01 00 00
+ldb> t
+ldb> i
+pc=2d:014b sr=22  a=ff x=00 y=0e
+stack 3d 2f 17 90
+zp 57 0a 00 00 40 1c 00 17 27 00 00
+ldb> t
+10007	 { a prime number calculated by prim after 5 ticks }
+ldb> i
+pc=2d:017b sr=21  a=00 x=09 y=04
+stack 3d 2f 17 90
+zp 57 09 00 60 02 00 00 79 01 00 00
+ldb> s
+s #signum   (1..16)
+  sends signal to process
+ldb> s 7  { send signal 7 'killed parent' }
+process doesn't support this signal
+ldb> s 6  { send signal 6 'user break' }
+ldb> t	  { another tick.. }
+Process died	{ process caught the signal and ended }
+ldb> i
+No file loaded
+ldb> x	  { exit from ldb .. back to shell }
+@>
+
+
+disassembler notes:
+-------------------
+  The assemblersytax may look strange to you, because it is based on
+  an old assembler i wrote (it was easier to use it's disass-tables as
+  writing some new, wich i may do somewhen in future).
+
+   lda#$12
+       ---
+	parameter #12 is decimal, $12 hex, "a  ascii, <label a label
+	the parameter may be preceeded by a l (low byte) or h (high
+	byte) eg.  lda#l$1234 is the same as lda#$34 and
+		    lda#h$1234 like lda#$12.
+   ---
+    the first 3 chars define the command (like lda,sta,inc,and,...)
+       -
+	the fourth char defines the addess-mode
+	     # immediate
+	     $ adr
+	     x adr,x
+	     y adr,y
+	    ii (adr),y	 (third and fourth char 'i')
+	    ix (adr,x)
+
+  some examples:
+   lda#$23     is  lda	#$23
+   lda$$23     is  lda	$23
+   lda$$1234   is  lda	$1234
+   ldii$a2     is  lda	($a2),y
+   ldax$c000   is  lda	$c000,x
+   adcx$c080   is  adc	$c080,x
+   + ii$bf     is  adc	($bf),y
+   =  $$1234   is  beq	$1234
+   <> $$1234   is  bne	$1234
+   pjp$$1234   is  byte $0c; word $1234
+   jsr$$9012   is  jsr	$9012
+
+---------------------------------------------------------
+uuencoded 'ldb'- file (Lunix executable)
+
+begin 644 ldb
+M__\``0\`0%<&`!Q``````````````````````$Q(<$Q2<```````````````
+M`````````````````$Q$0@``````J7`@49!,JGEXJ0.N`7`@+9!`3!N0#*)P
+M,#$R,S0U-C<X.4%"0T1%1@$$!PH-$!,6````````````````````````````
+M```````````````````````````````````````I/_`LR2"P`@E`(&F0D"$@
+MMW!,&Y`L<7`0%JUU<*QV<"!@D+`+K7%P*7^-<7`@%9!88*J]`,3-<G#0%(HL
+M<'`P#SCMH'`L<'!P!AAMH7`DBDA*2DI*JKU8<""L<&@I#ZJ]6'!,K'"I)""L
+M<*58(-1PL!*E5R#R<*(!BO`(J2`@K'#*T/A@(`AQI5<I!ZJ]:'"J(!MQI5=(
+MH`"Q5R#R<*D@(*QPIE?HAE?D6=`&I5C%6O`%BBD'T."*20<8:0$I!ZJ]:'`X
+MZ0&J(!MQ:(57*0>J(!MQH`"Q5RE_R2"P`JDN(*QPIE?HAE?D6=`&I5C%6O`%
+MBBD'T-VI#2"L<(K0`N98I5C%6M`$I5?%66`@"'&@`+%7J+D`>R"B<+D`?""B
+M<+D`?2"B<+D`?B"B<+D`?BG`R8"P$ZD!&&57A5>0`N98J0T@K'!,HG'P&*DD
+M(*QPH`*Q5R#4<*`!L5<@\G"I`TS8<;D`>RE`T!&I)""L<*`!L5<@\G"I`DS8
+M<:DD(*QP&*57:0*%6Z58:0"%7*`!L5<P"V5;A5NE7&D`3$9R95N%6Z5<Z0`@
+MU'"E6R#R<*D"3-AQJ0$L<'#P$"`G<9`)SG!PJ?^%685:&&"@`+%72""M<6C)
+M#/`1R0+P`AA@[G!PJ?^%685:&&"@_\98L5<X[:%P&&V@<(5:B+%7A5GN<'#F
+M6!A@+'APBD@@MW`L<7!0"ZUR<*(`CG%P('60:*J]>'#P*NC)(-`EO7AP\"`8
+MBFVE<JJLIG*0`<@@3I"P!2!CD)`4K@)P(%V0+(=S8*X"<"!=D"QA<V"-<W"-
+M<G"%6(V@<*D`A5>@";%7A5G(L5=E6(5:K7!P"0&-<'"@`+%9R:G0#,BQ68VA
+M<*E`C7%P8*X"<"!=D"Q$<ZV@<(VA<$PI<PSN<\-!3B=4(%)%4T],5D4@3U)'
+M+4%$4BX@+3Y-00T`3"`\1%)6.D9)3$4^($Q/0413($$@15A%0U5404),12!&
+M24Q%#0!,1$(Z(,DOSR!%4E)/4@T`3$1".LE,3$5'04P@S<G$#0!((%O-R<0Z
+M75M!1%)=($A%6$1535`-`$0@6\W)Q#I=6T%$4ET@1$E305-314U"3$4-`,E,
+M3$5'04P@S<G$+4]&1E-%5`T`O7AP\`T@JG2P&*UP<"G^C7!PJ0I((!IT(%-R
+M:#CI`=#S8*X"<"!=D"R_<V"F6+T`Q,US</#UK@)P(%V0+-IS:&AH8+UX</`%
+M(*ITL!"I"D@@&G0@)W%H..D!T/-@K@)P(%V0+*AS8*D`A5N%7+UX</`'R2#0
+M!>C0]#A@..DPD/G)"I`,*7_I!\D*D.W)$+#I!ELF7+#C!ELF7+#=!ELF7+#7
+M!ELF7+#1!5N%6^B]>'#P",DZ\`3)(-#!&&`@572P5LDZ\"G)`-!.K7)PC7-P
+M+'!P<`DP!3CMH7`LJ0`895R%6*5;A5>I_X59A5H88*5<T!RD6[D`Q,5;T!.-
+M<W#H(%5TL!/)`-`/K7-P3,MTK@)P(%V0+)=S.&`@9I"P!<D#\`%@3+%P#'=U
+MT%)/0T534R!$245$#0#.3R!&24Q%($Q/041%1`T`PT%.)U0@4U1!4E0@4%)/
+M0T534PT`T%)/0T534R!)4R!.3U0@4E5.3DE.1PT`T%)/0T534R!)4R!254Y.
+M24Y'#0``+'%P,!!P`TS-=:X"<"!=D"Q*=3A@K75PK'9P(&"0L"D88*G_+*D`
+MC79U('=UL/*I`)W`P)W@P+T`P"F_G0#`(`"06""&=DQ3=DQS=JX"<"!=D"QB
+M=6"N`G`@79`L)74X8"QQ<##F4.Z]>'#P!X9;J0$@<I"%7*YR<*`(>"!(D%BE
+M7/`3IEN@`(1;F)%;).C(O7APD5O0]ZE`("&0CG=PBGBN<G"@`2!(D*T"<,@@
+M2)"M`W#(($B06*D"KG)P($60D`^N`G`@79`L-76I`(UQ<&"-=7",=G"I@(UQ
+M<%BM=7"L=G!X(&"0L!.]`,`I0-#LBJ()I`(@"9"PXEA@J0"-<7"N`G`@79`L
+M%W4X8$RQ<"`2D"QV=1#TK@%P(&^0L.WP#B`'=<D3\..N=W`@+9!83(9V#,YV
+M4$,]`"!34CT`("!!/0`@6#T`(%D]````4U1!0TL`6E`@`"!W=;`*CL)VO:#`
+MC<-V&%A@K<-VA5R@`(1;K@)P(%V0+*QVH`2Q6TC(L5NJ./T`Q$B]`,0@\G"I
+M.B"L<&@@\G!H(/)PK@)P(%V0++!VH`.Q6R#R<*X"<"!=D"RU=J`"L5L@\G"N
+M`G`@79`LNG:@`;%;(/)PK@)P(%V0++YVH`"Q6R#R<*D-(*QP8"#.=K#Z(-]V
+MK@)P(%V0+,1VKL)VO4#`R0;P&J`&J2`@K'"Q6R#R<,C`(/`)F*["=MU`P-#H
+MJ0T@K'"N`G`@79`LRG:NPG:]8,`@\G"NPG:](,"HO8#`\!G)"I`"J0J-PG:I
+M(""L<+%;(/)PR,["=M#PJ0T@K'!@('=UL/JI`ZYW<"`MD%A@##5X4R`C4TE'
+M3E5-("`@*#$N+C$V*0T@(%-%3D13(%-)1TY!3"!43R!04D]#15-3#0!04D]#
+M15-3($1/15-.)U0@4U504$]25"!42$E3(%-)1TY!3`T`AEL@SG:P(:9;(%5T
+ML"6]>'#0(*5<T!RF6_`8X!"P%*W"=B!+D%BP`6"N`G`@79`L$'A@K@)P(%V0
+M+.%W8`P2>4Q$0CX@`)T@G0#!5D%)3$%"3$4@0T]-34%.1%,Z($921$A3251-
+M0T)8#0#,U4Y)6"#$14)51R#615)324].(#$N,`T@($)9(-!/3$1)("`T+C,N
+M,3DY-@T`32T@0TA!3D=%($%$1%)%4U,M1$E34$Q!62!-3T1%#2!/($]224=)
+M3D%,#2!2(%)%3$%4259%#2!!($%"4T],551%#0!,IW+J3-AUZDSN<^I,,73J
+M3#5XZDQ8=^I,G'7J3-EYZDR9=>I,SW?J3-9YK@)P(%V0+'5XH@`@!W7)#?`K
+MR13P$LD@D/'@)[#MG7APZ""L<$Q(>>``\-^&6ZX"<"!=D"Q[>*9;RDQ(>:D-
+M(*QPJ0"=>'!@H@"]>'#P&NC)(/#VH`#9DWCP$,C`"]#VK@)P(%V0+']X.&`8
+M8*X"<"!=D"R@>*D`C7%P(#UY((5YL/B8"@JHN1-YC=%YN11YC=)Y(.+\3+AY
+M3+%PO7APR4_P$LE2\!')0?`0K@)P(%V0+,YX8*D`+*E`+*F`37!P*<!-<'"-
+M<'!@`@``````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M``````````````````````````````````````(/!0$.#P$!$`\!)I`/`0%"
+M#P0!#@\!`0,/#@$.#P$!BB8$#`(!$A(0`1(F`@$2$D(F!`P.`1(2$P$.$@X!
+M$A(2'`02#A@,#!`8#":*&`P,0AP$$@X8#`P#&`X,#A@,#!(K!!(.`1(2$`$2
+M-HH!$A)"*P02#@$2$A,!#A(.`1(2#A,..!,3$P$$#A08$Q,3`4(3!#D3$Q,!
+M%!,4.3D3.3D,#`P,#`P,#!0,%`$,#`P,0@P$#`P,#`P##!0"#`P,#`,##@,#
+M`P0$"0,$`P,#!`1\`P0##@,$!`,##@0.`P0$`RT."0,3"0D)$PX3`Q,)"7TM
+M!`D.$PD)$Q,&"0X3"0D2$@X/#Q(3#`@2$PX*$A,,$!(%#P\2$PP,$@\,#Q(3
+M#!,@!28)#@\,#`X/#@D.#PP-(`4F#PX/#`4.#PP/#@\,%"`%&`\/$Q((#Q,,
+M#0\3$A8@!04/#Q,2#`\/$@\/$Q(4(`4K#P0/$@P$#P(-!`\2%B`%*P\$#Q(%
+M!`\2#P0/$@\4#S,4%!0F!0\8`104%"8#%`4S%!04)AD4&`(#%`4&!`0$`00$
+M!`$!!`$"!`0$`0,$!0$$!`0!#`03`@0$!`$0$`\#$`T%`PX-!0(0#04#/A`%
+M`P\-!0,,#0\##PT%`Q`@#RT0`@X.#@(/%1`"#@X@(`4M#P(.#@4"`0X/`@X.
+M"PD$"1`!#`\0`0P#$`$,#PP)`0D0`0P/(`$0#Q`!#`\2"0$)%`0,)A`$#`,4
+M!`PF"0D!"1`$#"8@!!`F$`0,)@D)`0D0$A(%`1(2$A`2$@4#"0$)$!(2!2`2
+M$`40$A(%$PD!"1`#$BL!`Q(@$`,2*Q,)`0D0`Q(K(`,0*Q`#$BL0"1`)&0$8
+M&!D0`289`1@8`PD!"1D!&!@!`1,@(`$@(!D)&!@9`1@8&0$8/QD!&!@3"0$)
+M&0$8&"`!&"`9`1@8&0D0"1D0`P,9$!@@&1`#`R`)`0D0$`,#(!`0`Q`0`P,8
+M"1`)&`,#+1@#$`(8`P,M(`D!"1`#`RT@`S\M$`,#+4"8`)BRI*2D0*-!I.3D
+MY.2DB02)LIB8F$/9<=GSV-C8Y)@$6*2DI*1`HT&DY.3DY*2)!(FRF)B80]EQ
+MV?/8V-A`F`28LJ2DI$"C0:/DY.3DI(D$B;*8F)A)V7'9\]C8V$"8!)BRI*2D
+M0*-!H\GDY.2DB02)LIB8V$G9<=GSV-C8LIBRF*2DI*1`LD"CY.3DY*2)!(F8
+MF)F80-E`V=C8V=FCF*.)I*2DI$"C0$#DY.3DI(D$B9B8F9E6V4#9V-C9V:.8
+MLIBDI*2D0*-`H^3DY.2DB02)LIB8V$39<=FSV-C8HYBRF*2DI*1`HT"CY.3D
+1Y*2)!(FRF)B81-E`V;/8V-B)
+`
+end
+
+
+

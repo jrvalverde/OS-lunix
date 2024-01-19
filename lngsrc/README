@@ -1,0 +1,18 @@
+NOTE:
+=====
+
+to compile LNG with lupo 0.16 you have to add a very small patch:
+ change line 180 from
+    a=='ß' || a=='.' ) return 0;
+ to
+    a=='ß' ) return 0;
+
+PATCH:
+======
+to apply the patch LNG0.01 -> LNG0.02
+change to the directory where you untarred the LNG tree and type
+
+  patch <patch0.01-0.02
+
+you can also try to apply the patch by hand (the patchfiele is human readable)
+

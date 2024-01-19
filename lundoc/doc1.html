@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//AdvaSoft//DTD HTML 2 extended 960415//EN">
+<HTML>
+<HEAD>
+ <TITLE>Comming up ... LUnix-Forum</TITLE>
+</HEAD>
+
+<BODY>
+<H1>LUnix-Forum</H1>
+<H3>I'm quite far with the new kernel, but this may be because i put many
+things into external modules. I'm also thinking about using modules
+for many other things. Here a picture of a minimal LUnix-system:
+</H3>
+<P>
+<CENTER><IMG SRC="lun00.gif"></CENTER>
+<P>
+<H2>All circle-symbols shown above are Modules: </H2>
+<DL>
+<DT><STRONG>XMI-Modules</STRONG>
+ <DD>External memory interface modules. Used by the kernel to
+ access external memory.
+<DT><STRONG>EXC-Modules</STRONG>
+ <DD>Exec modules. Used by the kernel to execute binarys or scriptfiles.
+<DT><STRONG>DEV-Modules</STRONG>
+ <DD>Device modules. Used by the kernel to access discdrives. 
+<DT><STRONG>SCR-Modules</STRONG>
+ <DD>Screen modules. Used by user interfaces or applications that need to
+ control the entire screen. (games?)
+<DT><STRONG>KYB-Modules</STRONG>
+ <DD>Keyboard modules. Used by user interfaces or applications that need direct
+ access to the keyboard. (games?)
+<DT><STRONG>TER-Modules</STRONG>
+ <DD>Terminal modules. Used by shells or other applications that can run on a terminal-screen.
+ All applications that can be started from a shell can also run on a terminal directly.
+</DL>
+<H2>Every box in the picture is a process. Processes may contain modules (like "user interfaces")</H2>
+<DL>
+<DT><STRONG>User interfaces</STRONG>
+ <DD>Requires a Keyboard and a Screen (both accessed through modules). The user interface
+ builds "ter"-modules and starts shells or other applications.
+<DT><STRONG>Shell</STRONG>
+ <DD>Can be used to run scripts or edit/execute command-lines, passes arguments and controls
+ other processes.
+</DL>
+
+The idea is, that you can choose what modules should be used. Just use a 80char-"scr" modul,
+if you want to have 80 chars per line, or take the VDC-"scr" modul, if you have a C128.
+(assuming someone will write such a VDC-"scr" modul). You have this freedom of choice with
+every kind modul !
+
+<HR>
+
+You could also think of other user interfaces, eg. graphical ones. Such a modul would offer
+enhanced "ter"-modules (with some additional routines to create pull-down menus or something
+like that).
+A GUI might need a "<STRONG>ptr</STRONG>"-modul to have access to a pointer (mouse).
+<P>
+
+<CENTER><IMG SRC="lun01.gif"></CENTER>
+
+<HR>
+
+An other kind of modul, the "pck"-modul gives access to a packet-driver. A packet driver sends and 
+receives packets of data through either a real pear-to-pear connection (eg. userport or
+serial interface) or through a virtual connection (eg. a TCP/IP-connection) that is built upon
+an other pear-to-pear connection (eg. SLIP).
+
+With such packet driver, you could let an other machine take control over your screen (like
+you know it from the X11-window system).
+
+<P>
+<CENTER><IMG SRC="lun02.gif"></CENTER>
+
+<HR>
+
+Here an example on how a TCP/IP-stack can be realized. The raw byte-send/receive-connection
+(eg. a swiftlink) can be accessed through a "con"-modul. A SLIP-process uses the "con"-modul to
+generate a "pck"-modul that can be used by the TCP/IP-stack to deliver IP-packets. You could 
+switch to PLIP (parallel line IP) by just replacing the "pck"-modul.
+<P>
+<CENTER><IMG SRC="lun03.gif"></CENTER>
+
+<HR>
+
+A normal terminal-process invoked by a shell-command would just use a "con"-modul.
+
+<P>
+<CENTER><IMG SRC="lun04.gif"></CENTER>
+
+<HR>
+
+You would be able to use your C64 as a Internet terminal-server. All you need is a telnetd-process
+that is able to generate "ter"-modules from TCP/IP-connections.
+
+<P>
+<CENTER><IMG SRC="lun05.gif"></CENTER>
+
+<HR>
+You might want to take a look at the next kernel. I decided to put my working-directory on the
+net. The files in there might be unfinished, undocumented and all in all garbage :-)
+<P>
+
+If you dare, download them and tell me what you think. Choose the link
+in the main "LUnix - next generation" page.</BODY>
+</HTML>

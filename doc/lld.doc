@@ -1,0 +1,110 @@
+
+                 ldd - linker for 'luna' generated object files
+                 ==============================================
+                                Version 0.02
+
+ Usage:
+
+   lld [-lLos] input-files...
+
+    -l library-file
+    -L = create library instead of executable
+    -o output-file (default is c64.out or c64.lib)
+    -s address (start address in decimals, default 4096)
+
+ Description:
+
+       lld  combines  a  number of object and archive files, relo-
+       cates their data and ties  up symbol references. Often  the
+       last  step  in  building a new compiled program to run is a
+       call to lld.
+
+       The advantage of  using object files is that they have half
+       way passed the assembler, only external labels and absolute 
+       addresses have  to  be inserted to get a full working code.
+       Instead of  building one very large source file you can now 
+       have  many  small  files,  which  you  assemble separately.
+       (you don't have to worry about using labelnames twice, when
+       they are not gobal.) You  just make  the assembler ("luna") 
+       build objectfiles instead of executables.
+
+         eg.  luna -O -o test1.o test1.a
+              luna -O -o test2.o test2.a
+              luna -O -o test3.o test3.a
+ 
+       All object files must then  be  linked together  to get the
+       executable file.
+       
+         eg.  lld -o test.c64 -s 49152 test1.o test2.o test3.o
+
+       Maybe you  wrote many little objectfiles  that you use like
+       a library, when writing  a new programm.  When linking, you
+       must  always search  for  the  objectfiles  to  link  with.
+       In  that case you can use lld to  create a libraryfile from
+       all  your  little objectfiles and  link your main code with
+       this library.  Lld  will only  add  those  objects from the
+       library  that  are  needed  and exclude  all other objects.
+       The result  is  the same  as  choosing the objects by hand,
+       but much more convenient (and faster). 
+
+         eg.  lld -o test.lib -L util1.o util2.o util3.o ...
+
+              lld -o prg.c64 -l test.lib prg.a
+
+
+ Object format:
+ ==============
+
+   "obj"              = Magic-bytes.
+
+   {"name\0",word}+   = Table of globals and their relative value. 
+   "\0"                 Zero terminated strings followd by two bytes,
+                        an empty string marks the end of the list.
+
+   {"name\0"}+        = Table of externals.
+   "\0"                 Zero terminated strings, empty string marks
+                        end of list.
+
+   {fragment}+        = List of code-fragments, zero terminated.
+   "\0"
+
+   with each fragment one of...
+ 
+               o  $01-$7f, followed by 1 to 127 bytes 
+                  1-127 static bytes, that don't have to be adapted.
+
+               o  $81/$82/$83,word
+                  Lo-byte/hi-byte/or both of address that has to be relocated.
+                  (word=relative value)
+
+               o  $C1/$C2/$C3,word
+                  Lo-byte/hi-byte/or both of external address.
+                  (word=number of external)
+
+               o  $D1/$D2/$D3,word1,word2
+                  Lo-byte/hi-byte/or both of external address with
+                  offset word2. (word1=number of external)
+
+
+ Library format:
+ ===============
+
+   "lib"              = Magic-bytes.
+
+ { {"name\0",word}+   = $01 terminated list of object-headers included
+   "\0"                 in the library. (Each object-header consists of
+   {"name\0"}+          a zero terminated list of globals and their relative
+   "\0"            }+   value followed by a zero terminated list of the
+                        externals.)
+   "\1"
+
+ { {"name\0"}+        = List of object-bodys. (Each object-body consists of
+   "\0"                 a zero terminated list of externals followed by a
+   {fragment}+          zero terminated list of code-fragments.)
+   "\0"          }+
+
+ Each object's externals are included twice, because this makes
+ linking a bit faster (especially when ported to the C64).
+
+
+

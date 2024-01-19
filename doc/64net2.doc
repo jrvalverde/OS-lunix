@@ -1,0 +1,10 @@
+There is now a 64NET/2 driver for LUnix.
+
+You need 64NET/2 v00.03 or higher for the LUnix extensions to be present
+(and thus have the driver work!).
+
+It is much faster than the 1541! But i will also work on making it much faster
+again very soon.
+
+Paul Gardner-Stephen (18 May 1997)
+gardners@ist.flinders.edu.au

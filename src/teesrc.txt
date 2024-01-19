@@ -1,0 +1,247 @@
+Global labels...
+
+a	 =$0057
+stdout	 =$9069
+stdin	 =$9066
+base	 =$c800
+cleanup	 =$c84e
+die	 =$c848
+init	 =$c8e8
+------------------------------------------------------------
+*** FILE ".tee.0"
+
+base:
+	  ;   tee v2.0
+
+	  @1#0
+	  @1#1
+	  @1#2
+	  @1#0
+	  ;   64 stack 87..88 zeropage
+	  @1#64
+	  @1#87
+	  @1#2
+	  @1#0
+
+	  a=#87
+	  ;   pointer to start
+	  @1$1c
+	  @2$40
+
+	  use3;null1;null2;null3;null4;null5
+	  jmp  userbreak
+	  jmp  killedparent
+	  use3;null8;null9;null10;null11
+	  use3;null12;null13;null14;null15
+
+	  text "tee"
+	  @1#0
+	  use4;null
+
+start:	  lda  #>base
+	  jsr  $9051
+	  jmp  64738
+userbreak:
+killedparent:
+die:	  jsr  cleanup
+	  jmp  $901b
+cleanup:  lda  base+4
+	  beq  skip
+	  jsr  $ffcc
+	  lda  #1
+	  jsr  $ffc3
+	  ldx  #0
+	  jsr  $9042
+	  cl i
+skip:	  rts
+
+	  stdout=$9069
+	  stdin=$9066
+
+	  #add teelab a stdout stdin base cleanup die
+	  #next tee.1
+
+------------------------------------------------------------
+*** FILE ".tee.1"
+
+	  ;   tee.1
+	  #include teelab
+	  strout=$905d
+	  lock=$903f
+	  unlock=$9042
+	  pipechk=$906f
+	  st=#144
+
+	  use2;fname
+	  use1;flen
+	  use1;flag
+	  use1;hlp
+
+	  pjp  ovv
+
+howto.txt:text "usage-"
+	  @1#13
+	  text "  tee {-a}{-e} file{"
+	  @1#44
+	  text "type}"
+	  @1#13
+	  text "   type=p"
+	  @1#44
+	  text "u or s (default)"
+	  @1#13
+	  text "   a append to file"
+	  @1#13
+	  text "   e echo to stdout"
+	  @1#13
+	  @1#0
+iofault.txt:
+	  text "tee"
+	  @1#58
+	  text " io-error"
+	  @1#13
+	  @1#0
+	  use1;flgs
+
+ovv:
+gnxc:	  iny
+	  beq  howto
+	  lda  (a),y
+	  beq  howto
+	  rts
+
+init:	  lda  base+8
+	  beq  howto
+	  sta  fname+1
+	  sta  a+1
+	  ldy  #0
+	  sty  flgs
+	  sty  a
+il0:	  gnxc
+	  cmp  #32
+	  beq  il0
+	  cmp  #asc("-")
+	  bne  gfnam
+	  gnxc
+il1:	  cmp  #asc("a")
+	  beq  isapar
+	  cmp  #asc("e")
+	  beq  isepar
+howto:	  ldx  base+3
+	  jsr  strout
+	  bit  howto.txt
+	  jmp  $901b
+isapar:	  lda  #64
+	  @1$2c
+isepar:	  lda  #128
+	  ora  flgs
+	  sta  flgs
+	  jmp  il0
+gfnam:	  sty  fname
+	  ;   set file typeat the end
+nxx:	  iny
+	  beq  howto
+	  lda  (a),y
+	  bne  nxx
+	  dey
+	  dey
+	  lda  (a),y
+	  iny
+	  iny
+	  cmp  #44
+	  beq  typok
+	  lda  #44
+	  sta  (a),y
+	  iny
+	  lda  #asc("s")
+	  sta  (a),y
+	  iny
+	  lda  #0
+	  sta  (a),y
+typok:	  lda  #44
+	  sta  (a),y
+	  iny
+	  lda  #asc("w")
+	  bit  flgs
+	  bvc  spp0
+	  lda  #asc("a")
+spp0:	  sta  (a),y
+	  sty  flag
+	  iny
+	  lda  #0
+	  sta  (a),y
+	  tya
+	  se c
+	  sbc  fname
+	  sta  flen
+	  jmp  go
+
+go:	  ;   wait fordata at stdin
+	  jsr  getchar
+	  pha
+	  ;   open file for writing
+	  ldx  #0
+	  lock
+	  cl i
+	  lda  flen
+	  ldx  fname
+	  ldy  fname+1
+	  jsr  $ffbd
+	  lda  #1
+	  ldx  #8
+	  ldy  #2
+	  jsr  $ffba
+	  jsr  $ffc0
+	  bcs  iofault
+	  ;   nexttime it will be append
+	  ldy  flag
+	  lda  #asc("a")
+	  sta  (a),y
+
+	  ldx  #1
+	  jsr  $ffc9
+	  bcs  iofault
+	  pla
+lp:	  jsr  $ffd2
+	  bcs  iofault
+	  lda  st
+	  bne  iofault
+	  ldx  base+1
+	  jsr  pipechk
+	  bcs  weg
+	  beq  emtpy
+gnx:	  jsr  getchar
+	  jmp  lp
+iofault:  ldx  base+3
+	  jsr  strout
+	  bit  iofault.txt
+weg:	  jmp  die
+emtpy:	  lda  #8
+	  sta  hlp
+llp:	  jsr  $9012
+	  ldx  base+1
+	  jsr  pipechk
+	  bcs  weg
+	  bne  gnx
+	  dec  hlp
+	  bne  llp
+	  jsr  cleanup
+	  jmp  go
+
+getchar:  jsr  stdin
+	  bcs  weg
+	  bit  flgs
+	  bpl  geted
+	  cmp  #4
+	  beq  weg
+	  jsr  stdout
+	  bcs  weg
+geted:	  rts
+
+	  @1#2
+
+	  #add teelab init
+	  #next
+
+ Written by Poldi 17.3.1996
+    <Daniel.Dallmann@studbox.uni-stuttgart.de>
+

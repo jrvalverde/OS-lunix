@@ -1,0 +1,93 @@
+Programm-Struktur
+=================
+
+     Auf Diskette	 rel.Adr.	 Im Speicher
+--------------------------------------------------------
+Lunix-Kennung : FF FF  |	       |	--
+Version	      : XX     |    0000       |   Start-Page
+		XX     |    0001       |   Std.In  (Pipe Nr.)
+Laenge in Pages XX     |    0002       |   Std.Out (Pipe Nr.)
+		00     |    0003       |   Std.Err (Pipe Nr.)
+--------------------------------------------------------
+Stack-Umfang	XX     |    0004       |   0   \
+ZP-Start	XX     |    0005       |   1	|
+ZP-Umfang	XX     |    0006       |   2	| Hilfs-Semaphore
+		00     |    0007       |   3   /   (PrzSemaphore)
+--------------------------------------------------------
+  Rest = Daten	       | 0008 - 0037   |  15-Vektoren je 3 Byte
+		       | 0038 - 003F   |  8 Zeichen Prg.Bezeichner ($00-End)
+		       | 0040 - ...    |    Rest = Programm
+
+Wobei Signaladresse = 3 Byte mit    00 XX XX - Vektor nicht definiert
+				    4C Lo Hi - Absolute Adresse
+				    2C Lo Hi - Relative Adresse
+      Signal 0 wird immer als relative Adresse behandelt
+
+Bedeutung der Semaphore:
+========================
+
+  0.Byte : Bit7 : IEC-Bus
+	   Bit6 : Keyboard
+	   Bit5 : Joystick 1 (Port 56320)
+	   Bit4 : Joystick 2 (Port 56321)
+	   Bit3 : SID-Stimme 1
+	   Bit2 : SID-Stimme 2
+	   Bit1 : SID-Stimme 3
+	   Bit0 :  -- noch offen
+  1.Byte : Bits0-7 entsprechen der Sprites 0-7
+  2.Byte : Bits0-7 entsprechen den Userportbits 0-7 (Port 56577/56579)
+  3.Byte :	   -- noch offen
+
+  Die Pass(Semaphore 0-31)-Funktion laeuft folgendermassen ab :
+    Um ein Betreibstmittel zugesprochen zu bekommen,darf es von keinem anderen
+    Prozess belegt sein -> deshalb die Semaphoren
+    Zur Speicherung von 32 Semaphoren sind 4Byte erforderlich.
+    In jeder Prozess-Start-Page werden so die vom jeweiligen Prozess in Beschlag
+    genommenen Betriebsmittel vermerkt.(PrzSemaphore)
+    Zusaetzlich werden die Belegungen in 4SystemBytes registriert ($C268-$C26b)
+    (SystemSemaphore)
+    Eine Belegung laeuft dann folgendermassen ab :...
+      - Ist die PrzSemaphore schon belegt ?
+	  Ja - dann Ok + ende
+	Nein - ist die SystemSemaphore belegt dann wird der Prozess beBLOCKed,bis
+	       eine Aenderung eintritt.
+	       jetzt werden beide Semaphoren (System+Prz) belegt
+	       -> Ok + ende
+
+  Die Verlassen-Operation :
+    Zum Freigeben eines Betriebsmittels
+      - Ist die PrzSemaphore nicht belegt denn Ok + ende
+	sonst :
+	System- und PrzSemaphore freigeben und andere Blockierte Prozesse
+	erwecken.
+
+ !!ACHTUNG!! -> Werden mehrere Betriebsmittel benoetigt,dann sollte man,um
+     Deadlocks zu vermeiden so vorgehen :
+
+       - Pass 1.Semaphore
+	 ist 2.Semaphore belegt ?    wenn ja Verlasse 1.Semaphore,neuer Anlauf
+	 Pass 2.Semaphore
+	 ist 3.Semaphore belegt ?    wenn ja Verlasse 1.und 2.,neuer Anlauf
+	 ....und so weiter,dann koennen sich 2Prozesse nicht
+	     gegenseitig Blockieren (Deadlock)
+
+
+Die Signale:
+============
+  Mit der Routine SendSignal ($904B) kann man an andere Prozesse Signale 'verschicken'
+     ->	   in der Art
+		    lda #IPID
+		    ldx #SignalNummer (1-15)
+		    jsr $904B
+  Die Wirkung ist aehnlich,wie ein Interrupt d.h. nach der naechsten Aktivierung
+  des gerufenen Prozesses beginnt dieser mit der Signal-Routine und kann mit
+  <ret> wieder ins Hauptprogramm
+
+
+
+
+
+
+
+
+

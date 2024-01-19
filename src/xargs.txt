@@ -1,0 +1,398 @@
+		;; xargs  -  build  and  execute  command lines from standard
+		;; input
+
+		;; haven't added process controlls yet.
+		;; no user break (yet)
+		
+#define _date "Feb 23 12:11:53 MET 1997"
+#include "kernel.inc"
+
+.header "xargs", .ptr1, .ptr2
+
+_init:
+		lda  _base+8			; parse commandline
+		beq  usage
+		sta  ptr1+1
+		ldy  #0
+		sty  ptr1
+
+      - iny
+		beq  usage
+		lda  (ptr1),y
+		beq  usage				; need at least a command name
+		cmp  #" "
+		beq  -
+		cmp  #"-"
+		bne  options_end
+
+opt_scan:
+		iny
+		beq  usage
+		lda  (ptr1),y
+		cmp  #"c"
+		beq  found_c
+		cmp  #"t"
+		beq  found_t
+		cmp  #"l"
+		beq  found_l
+		cmp  #"P"
+		beq  found_P
+		cmp  #"?"
+		beq  usage
+		cmp  #"h"
+		beq  usage
+		cmp  #"-"
+		beq  opt_scan
+		cmp  #" "
+		beq  -
+		jmp  options_end
+
+usage:	ldx  stderr_ch
+		jsr  strout
+		bit  usage_txt
+		lda  #255
+		jmp  suicide
+
+found_c:
+		lda  #$40
+		.byte $2c
+found_t:
+		lda  #$80
+		ora  cflags
+		sta  cflags
+		jmp  opt_scan
+		
+found_P:
+		jsr  getvalue
+		bcs  usage
+		sta  max_procs
+		jmp  [-]+1
+
+found_l:
+		jsr  getvalue
+		bcs  usage
+		sta  max_lines
+		jmp  [-]+1
+
+options_end:
+		;; Y should now point to the command's name
+		sty  com_name
+
+	  - iny
+		beq  usage
+		lda  (ptr1),y
+		beq  +
+		cmp  #" "
+		bne  -
+		lda  #0					; zero terminate command name
+		sta  (ptr1),y
+
+	  - iny						; scan for initial arguments
+		beq  +
+		lda  (ptr1),y
+		beq  +
+		cmp  #" "
+		beq  -
+		sty  initial_args		; remember position of arguments
+			  
+	  + ; end of parsing
+
+		;; get command line from stdin
+main:
+		
+		lda  #1
+		jsr  malloc				; allocate parameter page
+		sta  ptr2+1
+		ldy  #0
+		sty  ptr2
+		tya
+		sta  (ptr2),y
+		inc  ptr2
+
+		;; get initial arguments
+
+		lda  initial_args
+		sta  ptr1
+		lda  _base+8
+		sta  ptr1+1
+		ldy  #0
+		
+	  - lda  (ptr1),y
+		beq  +
+		sta  (ptr2),y
+		iny
+		bne  -
+		jmp  long_line			; line is too long
+
+	  + ;; add arguments from commandline
+
+		lda  #" "
+		sta  (ptr2),y
+		iny
+		beq  long_line
+		lda  max_lines
+		sta  line_count			; initialize counter
+		
+	  - jsr  getc
+		bcc  +
+is_eof:	; stdin EOF
+		lda  #$40
+		sei
+		ora  runflags
+		sta  runflags
+		cli
+		jmp  call_command
+		
+	  + cmp  #4					; check for CTRL+d (EOF)
+		beq  is_eof
+		cmp  #13
+		beq  +
+	  - sta  (ptr2),y
+		iny
+		bne  --
+
+long_line:
+		ldx  stderr_ch
+		jsr  strout
+		bit  long_line_txt
+		lda  #255
+		jsr  suicide			; err.. return with error
+
+	  + lda  #" "				; <CR> replaced by " "
+	    dec  line_count
+		bne  -
+
+call_command:
+		lda  #$00				; terminate argument list with $00
+		sta  (ptr2),y
+		lda  ptr2+1
+		sta  tmp				; remember MID of child's param page
+
+		bit  cflags
+		bpl  +
+		jsr  be_verbose
+      + jsr  load_command
+
+		ldy  #0
+		tax
+		jsr  setsup				; set child's base-address
+		iny
+		lda  #0
+		jsr  setsup				; child's stdin is NULL
+		iny
+		lda  stdout_ch
+		jsr  setsup				; child's stdout is my stdout
+		iny
+		lda  stderr_ch
+		jsr  setsup				; child's stderr is my stderr
+		lda  tmp
+		ldy  #8
+		jsr  setsup				; set child's param page
+		lda  #4
+		jsr  init_process		; activate process (priority=4)
+		bcs  +
+
+		lda  runflags
+		bne  stop_it
+		jmp main				; repeat all
+
+	  +	; can't execute command...
+
+		ldx  stderr_ch
+		jsr  strout
+		bit  exec_err_txt
+		lda  #255
+		jmp  suicide
+
+stop_it:
+		lda  #0
+		jmp  suicide
+
+load_command:
+		lda  #$20
+		bit  cflags
+		beq  +					; code is not cached (yet)
+
+		;; get code from cache
+
+		lda  code_length
+		jsr  malloc
+		pha
+		sta  ptr2+1
+		ldy  #0
+		sty  ptr1
+		sty  ptr2
+		lda  code_cache
+		sta  ptr1+1
+		ldx  code_length
+
+	  - lda  (ptr1),y
+		sta  (ptr2),y
+		iny
+		bne  -
+		inc  ptr1+1
+		inc  ptr2+1
+		dex
+		bne  -
+		pla
+	  - rts
+
+		;; load code the normal way
+		
+	  + ldx  ptr2
+		ldy  _base+8
+		jsr  getdrvpage			; check drive
+		bcc  +
+		ldx  ptr2
+		ldy  _base+8
+		lda  $c2b0				; drvpage of initial driver
+	  + jsr  pload				; load command code
+		bcc  +
+
+		;; load error
+
+		ldx  stderr_ch
+		jsr  strout
+		bit  load_err_txt
+		lda  #255
+		jmp  suicide			; can't do anything more so quit
+
+	  + bit  cflags				; cache enabled ?
+		bvc  -
+
+		;; set up code cache
+
+		sta  code_cache
+		ldy  #0
+		tax
+
+	  - inx
+		iny
+		cmp  $c400,x			; check MID field to get code length
+		beq  -
+
+		sty  code_length
+		lda  #$20
+		ora  cflags
+		sta  cflags
+		jmp  load_command
+				
+getvalue:
+		lda  #0
+		sta  ptr2
+		
+	  - iny
+		beq  get_err
+		lda  (ptr1),y
+		beq  get_err
+		cmp  #" "
+		beq  -
+
+	  - sec
+		sbc  #"0"
+		bcc  +
+		cmp  #10
+		bcs  +
+		pha
+		lda  ptr2
+		cmp  #26
+		bcs  get_over
+		asl  a
+		asl  a
+		adc  ptr2
+		asl  a
+		sta  ptr2
+		pla
+		adc  ptr2
+		sta  ptr2
+		bcs  get_over
+		iny
+		beq  get_err
+		lda  (ptr1),y
+		beq  +
+		cmp  #" "
+		bne  -
+
+	  + lda  ptr2
+		clc
+		rts
+
+get_err:
+get_over:		
+		sec
+		rts
+
+be_verbose:
+		;; print <command name> <args>
+		lda  com_name
+		sta  ptr1
+		lda  _base+8
+		sta  ptr1+1
+		ldy  #0
+		
+	  - lda  (ptr1),y
+		beq  +
+		jsr  putc_err
+		iny
+		bne  -
+
+	  + lda  #" "
+		jsr  putc_err
+		lda  tmp
+		sta  ptr1+1
+		ldy  #0
+		sty  ptr1
+		iny
+
+	  - lda  (ptr1),y
+		beq  +
+		jsr  putc_err
+		iny
+		bne  -
+
+	  + lda  #13
+		jmp  putc_err
+
+.endofcode
+
+cflags:	.byte $00				; commandline flags
+		;; bit 7 = verbose
+		;; bit 6 = cache command code
+		;; bit 5 = cached command available
+
+runflags: .byte $00
+		;; bit 7 = user break
+		;; bit 6 = stdin closed
+		
+max_lines: .byte 255			; max lines per command
+max_procs: .byte 1				; max number of parallel processes
+procs:     .byte 0				; number of started processes
+initial_args: .byte 0			; pointer to initial arguments
+
+;p_stat:	   .word 0,0,0,0,0,0,0,0; status of started process
+
+		ident("xargs","0.9")	; insert ident pattern
+
+usage_txt:
+		.asc "xargs version 0.9\n"
+		.asc "Usage: xargs [-ct] [-l max-lines]\n"
+		.asc "       command [initial-arguments]\n"
+		.asc "  -c cache command code\n"
+		.asc "  -t type to stderr\n\0"
+
+load_err_txt:
+		.asc "xargs: couldn't load command code\n\0"
+
+exec_err_txt:
+		.asc "xargs: couldn't execute command\n\0"
+
+long_line_txt:
+		.asc "xargs: too many arguments\n\0"
+						  
+;pid_lo:    .buf 16				; PID of started processes (lo)
+;pid_hi:    .buf 16				; PID of started processes (hi)
+code_cache: .buf 1				; location of code cache
+code_length: .buf 1				; length of cached code
+com_name:	.buf 1				; pointer to command name
+line_count: .buf 1				; number of lines parsed
+tmp:	.buf 1

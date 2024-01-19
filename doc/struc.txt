@@ -1,0 +1,74 @@
+Macros defined in struc.h:
+==========================
+
+  if(condition)  or  ifnot(condition)
+  ...
+  [else]
+  ...
+  endif
+
+    with condition one of beq,bne,bmi,bpl,bcc,bcs,bvc,bvs,jmp
+
+  while(condition)  or  whilenot(condition)
+  ...
+  wend
+
+    condition must again end with a conditional branch, eg.
+    "ldx #0:bne"
+
+  repeat
+  ...
+  until(condition)  or  untilnot(condition)  equal to  aslongas(condition)
+
+    condition same as with while.
+
+Example:
+========
+
+#include "struc.h"
+
+start:
+  lda  #0
+  sta  counter
+
+  whilenot(lda  counter:beq)
+    lda  flag
+    ifnot(beq)
+      ldx  #100
+      repeat
+        lda  #" "
+        jsr  print
+        dex
+      aslongas(bne)
+    endif
+    dec  counter
+  wend
+  rts
+
+This example will look like this after preprocessing it with lupo:
+
+start:
+  lda  #0
+  sta  counter
+
+_wh__1:                        ; whilenot
+  lda  counter:beq  _wh__2
+  lda  flag
+  beq  _if__3                  ; ifnot
+  ldx  #100
+
+_ru__4:                        ; repeat
+  lda  #" "
+  jsr  print
+  dex
+  bne  _ru__4                  ; aslongas
+
+_if__3:  ; endif
+  dec  counter
+  jmp _wh__1                   ; wend
+
+_wh__2: 
+  rts
+
+nice tool isn't it ?  :-)
+

@@ -1,0 +1,294 @@
+Die Lunix - System-Routines
+===========================
+
+$9000 - Create process-run-table
+
+	Sets the duration-bytes and the follow-bytes of the active
+	processes.
+	The irq must be disabled !
+
+	First makes a summation of all priority-bytes (consider only the ready/running
+	processes).    factor:= 50 / sum
+		       for all ready/running processes do
+			  duration[process]:=priority[process] * factor
+	This will make sure,that every process will be active at least once every
+	50 IRQs (thats not the exact number,its only an average value).
+	Ready processes will now called running...
+	In addtition ($9000) will calculate the next-process[] pointer.
+	Every process will point to the next process to be activated.
+		$C000+IPID:= priority + flags(ready/running/blocked/zombie/unused)
+		$C100+IPID:= duration (the number of IRQs the process will stay active)
+		$C120+IPID:= pointer to the next process (his IPID)
+
+$9003 - Declare process		 < A=StackPage,X/Y=StartAdr	> A=IPID
+
+	Allocates a IPID and sets some standart values
+	IRQ must be disabled !
+	 (the process may be blocked because of a full process-run-table)
+
+	(This routine-pointer will perhaps be removed in a later version,because
+	its only used by the system itself)
+	This will allocate a free IPID and reset the IPIDs table:
+		$C000+IPID:= priority(=4) + flags(=ready)
+		$C020+IPID:= stackmaximum(=63)
+		$C040+IPID:= stacksize(=8)
+		$C060+IPID:= Zeropage Start adress (=0)
+		$C080+IPID:= Zeropage area size (=0)
+		$C0A0+IPID:= Stack+Zeropage Page (-will be allocated first then
+						   inserted here-)
+		$C0C0+IPID:= Waitstate(=0)
+		$C0E0+IPID:= Waitstate(sec.)(=0)
+		$C140+IPID:= TimeLowest (=0)
+		$C160+IPID:= TimeMid (=0)
+		$C180+IPID:= Timehighest (=0)
+		$C200+IPID:= Superpage-pointer (=hi of startadr given in y-reg)
+	Reset the process' stack :
+	8 Bytes :  on the top :	    Akku
+				    X-reg
+				    Y-reg
+				    PSR
+				    PC(lo,hi)
+				    suicide adr.-1 ($1A,$90)
+
+$9006 - Send interupt		 < A=IPID,X/Y=I-Adr		> c=Error
+
+	Modifies the Stack of an other (or the current) process :
+	  simulates an irq to the adr. in X/Y
+	  return with rti !
+	IRQ must be disabled
+
+	Simulates an IRQ to a certain process.
+	(sending to oneself is possible too,in this case
+	this routine will simply jump to the adr (X/Y-regs))
+	Modify the process' stack in that way that
+	the computer will jump to the given adr,when the process is activated next,
+	with no change of any register or even the PSR (Processor status register)
+
+
+$9009 - Block process		 < A=IPID,X/Y=WaitState		> c=Error
+
+	Set the WaitState and the Blocked-Bit and calls $9000
+	irq must be disabled
+
+	Quite simple: it checks if the process exists ($C000+IPID != 0)
+	then sets the WaitState (X/Y-reg) and the process flags
+	$C000+IPID:=old value AND $0F OR $40
+	and jump to $9000
+
+$900C - (without funktion yet)
+
+$900F - Unblock process		 < X=IPID			> c=Error
+
+	Removes the Blocked-Bit and sets the WaitState to $0000 + call $9000
+	(disabled irc!)
+
+$9012 * Break
+
+	stops the process and calls the follow-process
+	all flags will be left unchanged
+
+$9015 * Kill process		 < X=IPID,A=ExitCode  (FF=ex.nicht,FE=Killed with error)
+
+	Kills (an other) process with an exitcode
+	   - all locked semaphores will be unlocked
+	   - all allocated memory will be set free
+	   - all opened files will be closed
+	   - the stdin/stdout/stderr - pipe will be closed
+	   - signal #7 to all children
+	   - set IPID free
+
+$9018 * Suicide			 < A=ExitCode
+
+	same as $9015 but suicide....	:)
+
+$901B - suicide with ExitCode $FE   (function see $9015)
+
+$901E - Unblock process		 < $C262/3=WaitState,A will be passed
+
+	Unblock all processes with a certain WaitState
+	works like $900F
+	A will be passed to the unblocked process
+
+$9021 - Open Pipe		 < A=[7]0Byte/1Page[6]0Inp/1Outp > X=#Ch
+
+	Opens a pipe.Allocates memory for the pipe-descriptor
+	A pagepipe will be opened as a special bytepipe
+	  (the process may be blocked because of -less memory
+						 -no pipe left )
+	IRQ will be disabled after open !
+
+$9024 - Join Pipe		 < A=[7]0Inp/1Outp,X=#Ch       > c=Error
+
+	Joins a (opened) pipe.Each pipe must be opened AND joined to work correctly !
+	and error could be caused by joining a not opened or closed pipe
+			or by a read-join of a read-opened pipe
+	There is only ONE process as a reader but there may be up to 127 writing
+	processes for each pipe.
+	IRQ will be disabled after join !
+
+$9027 - Close Pipe		 < X=#Ch		       > c=Error
+
+	Close a pipe.If the pipe is completely closed,that means closed from the
+	reading process and ALL writing processes,all the allocated memory of this
+	pipe will be set free.
+	IRQ will be disabled after close !
+
+$902A - PipeInp			 < X=#Ch > A=Byte,c=Error (A:00=EOF,FF=Err)
+
+	Reads one byte from a pipe.
+	Errors with A=$FF :
+	       read without permission (you are not the reader of this pipe)
+	       read from a not existant pipe (wrong #Ch ?)
+	Errors with A=$00 :
+	       Empty pipe and no writer left (writer has closed the pipe)
+	IRQ will be disabled !
+
+$902D - PipeOutp		 < X=#Ch,A=Byte		       > c=Error
+
+	Puts one byte to a pipe.
+	Errors :
+	       write to a not existant pipe
+	       write to a pipe without reader
+
+$9030 - MemAlloc		 < X=Occ.Code,A=numb.of Pages  > A=MID,c=Error
+
+	Allocates a number of pages in one piece.
+	The MID is the same as the start-hi-adr of the allocated memory area.
+	Errors : there is not enough memory
+	IRQ must be disabled !
+
+$9033 - MemFree			 < A=MID		       > c=Error
+
+	Set allocated memory areas free
+	   (memfree won't unblock other processes !!! but don't forget to do this !)
+	IRQ must be disabled !
+
+$9036 - PageAlloc		 < X=Occ.Code		       > A=MID,c=Error
+
+	Allocates a single page but fast (in an other way than $9030!)
+	Errors : less memory
+	IRQ must be disabled
+
+$9039 - LessMemBlock
+
+	Blocks the process and sets the systemflag 'LessMemory' makes a Break ($9012)
+	then clears the 'LessMemory'-flag if there is no other blocked
+	(because of less memory) process.
+	IRQ disabled !
+
+$903C * GetExitCode		 < A=IPID		       > c=Error
+
+	Block the process then gets the exit-code
+	IRQ will be disabled and then enabled again
+
+$903F * Lock (Pass Semaphore)	 < X=#Nr		       > c=Error
+
+	Something like the PASCAL - P(...) procedure with semaphores
+	to prevent more then one process using the same XY.
+	XY might be the keyboard or IEC-Port or something like that...
+	   (the process will be blocked if the semaphore is locked)
+	irq will be enabled after that
+
+$9042 * Unlock			 < X=#Nr		       > c=Error
+
+	see PASCAL - V(...) procedure
+	unlock a semaphore.
+	irq will be enabled
+
+$9045 * Initiale process	 < A=Priority,X=SuperPage      > A/Y=PID,c=Error
+
+	this will do :	 - allocate memory for Stack+ZeroPage Buffer
+			 - get a IPID
+			 - own the process-body to the new IPID
+			 - open stdin/stdout/stderr pipes for the new process
+			 - sets process parameter and calls $9003
+	Errors: pipe-errors,no support of signal #0,...
+	Block because of :no IPID,no memory,...
+	irq will be enabled after this
+
+$9048 * SetSupByte		 < A=Byte,X=Page,Y=Offset
+
+	is a very simple routine
+	just makes something like POKE X*256+Y,A
+	there will be no change of A,X,Y
+	irq will be enabled
+
+$904B * Send Signal		 < A=IPID,X=#SigNr	       > c=Error
+
+	Sends a signal to a process.Signals 1-15 are available
+	    (#0 - initiate process,used only be the system and only ONCE!)
+	     #7 - killed father process
+	irq will be enabled
+
+$904E * Get DriverPage		 < X/Y=Filename		       > A=DrvPage,X/Y=Name' c=Error
+
+	Get the DriverPage from a Filename X/Y-Pointer of the first char,terminated by $00
+	The first char is the driverchar the second is ':' or '/' or '-'
+	the rest of the string is the normal dos-filename = Name'
+	Errors: no such driver
+	irq will be enabled
+
+$9051 * Mover			 < A=Org.adr. (Hi)	       > A=last code
+
+	since the startadr. of a program is variable you have to correct the
+	jmp$XXXX and jsr$XXXX ...
+	This will be done by the Mover	  :)
+	Just put the original adr (Hi-Byte) in the akku and then JSR  Mover
+	the mover will start by the next command and will continue till there
+	is a hexcode $02 (witch would cause a guru-meditation  :)   )
+	There is one special code - $0C $LO $HI
+	this will cause a (mover-)jmp to the abs-adr
+
+		 e.g.	  org=$C800
+			  lda# $C8
+			  jsr  Mover
+			  jsr  $c8xx
+			  lda  $c8yy,x
+			   ....
+			  rts
+			  $02
+...
+$9060	GetIPID			 < A/Y=IPID		       > X=IPID,c=Error
+
+	Gets the IPID from the PID
+	Error : there is no such PID
+	irq must be disabled !
+
+$9063 * PLoad			 < A=DrvPage,X/Y=Name'	       > A=MID,c=Error
+
+	Load a process-code.
+	Errors : - is no process code
+		 - wrong version
+	irq will be enabled after that
+
+$9066 * Get (from StdIn)				       > A=Byte,c=Error
+
+	a more comfortable version of $902A (PipeInp)
+	X,Y with no change,automated stdin pipe #Ch - geting
+	irq will be enabled
+
+$9069 * Put (to StdOut)		 < A=Byte		       > c=Error
+
+	c $9066 but like PipeOut on StdOut
+
+$906C * Put (to StdErr)		 < A=Byte		       > c=Error
+
+	c $906C but PipeOut on StdErr
+
+$906F * ChkPipe			 < X=#Ch		       > n=full,z=Empty,c=Error
+
+	Checks a pipe,A/X/Y will be changed
+
+$9072 * MemAllocate		 < A=Number of pages	       > A=MID
+
+	works like $9030 but sets X=IPID
+	and enables the irq
+
+$9075 * MemReallocate		 < A=MID		       > c=Error
+
+	works like $9033 but checks if you are the owner and unblock the
+	waiting processes + enables the irq
+
+
+ * - Wichtige Routinen fyr den Benutzer
+

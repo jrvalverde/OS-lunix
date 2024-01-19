@@ -1,0 +1,1236 @@
+Global labels and their values:
+
+a	=$0057 ; used
+b	=$0059 ; zero page
+hlp	=$005b ; bytes
+
+stdout	=$9069
+stdin	=$9066
+asstaba =$7b00
+asstabb =$7c00
+asstabc =$7d00
+asstabd =$7e00
+base	=$7000
+output	=$70ac
+die	=$70b1
+absout	=$70d4
+hexout	=$70f2
+hexline =$7127
+showline	=$7253
+newl	=$7108
+spc	=$711b
+omode	=$7070
+dmid	=$7073
+pipout	=$7077
+pidlo	=$7075
+pidhi	=$7076
+string	=$7078
+stat	=$7071
+mid	=$7072
+cleanup =$70b7
+base/org	=$70a1
+base/abs	=$70a0
+com.file	=$72a7
+com.disass	=$73ee
+com.hexdump	=$7431
+getnum	=$7455
+getadr	=$74aa
+com.run =$75d8
+com.continue	=$7599
+com.tick	=$759c
+input	=$7507
+pupchk	=$7577
+com.info	=$7758
+getipid =$76ce
+pcout	=$76df
+ipid	=$76c2
+smid	=$76c3
+com.break	=$77cf
+com.sendsig	=$7835
+com.mode	=$79d9
+com.exit	=$79d6
+init	=$79aa
+------------------------------------------------------------
+*** FILE ".ldb.0"
+
+	  ; org $7000
+
+base:
+	  ;   LunixDeBugger LDB V1.0
+
+	  @1#0
+	  @1#1
+	  @1#15
+	  @1#0
+	  ;   64 stack 87..92 zeropage
+	  @1#64
+	  @1#87
+	  @1#6
+	  @1#0
+
+	  a=#87
+	  b=#89
+	  hlp=#91
+	  ;   pointer to start
+	  @1$1c
+	  @2$40
+
+	  use3;null1;null2;null3;null4;null5
+	  jmp  userbreak
+	  jmp  killedparent
+	  use3;null8;null9;null10;null11
+	  use3;null12;null13;null14;null15
+
+	  text "ldb"
+	  @1#0
+	  use4;null
+
+start:	  lda  #>base
+	  jsr  $9051
+	  jmp  64738
+userbreak:se i
+	  lda  #3
+	  ldx  base+1
+	  jsr  $902d
+	  rti
+killedparent:
+	  jmp  $901b
+
+	  stdout=$9069
+	  stdin=$9066
+	  asstaba=$7b00
+	  asstabb=$7c00
+	  asstabc=$7d00
+	  asstabd=$7e00
+
+	  #add ldblab a b hlp stdout stdin asstaba asstabb asstabc asstabd base
+	  #next ldb.1
+
+------------------------------------------------------------
+*** FILE ".ldb.1"
+
+	  ;  ldg submodull
+	  #include ldblab
+	  #rm output die absout hexout hexline showline newl spc omode
+	  #rm ipid pidlo pidhi string stat mid dmid cleanup pipout
+	  #rm base/abs base/org
+
+	  pjp  go
+hextab:	  text "0123456789abcdef"
+hexposx:  @1#1
+	  @1#4
+	  @1#7
+	  @1#10
+	  @1#13
+	  @1#16
+	  @1#19
+	  @1#22
+	  use1;omode;stat;mid;dmid;ipid;pidlo;pidhi;pipout
+	  use40;string
+	  use1;base/abs;base/org
+
+go:
+cout:	  and  #63
+	  beq  oe
+	  cmp  #32
+	  bcs  output
+	  ora  #$40
+output:	  jsr  stdout
+	  bcc  oe
+die:	  jsr  cleanup
+	  jmp  $901b
+cleanup:  bit  stat
+	  bpl  oe
+	  lda  pidlo
+	  ldy  pidhi
+	  jsr  $9060
+	  bcs  oe
+	  lda  stat
+	  and  #$7f
+	  sta  stat
+	  jsr  $9015
+oe:	  cl i
+	  rts
+
+absout:	  tax
+	  lda  $c400,x
+	  cmp  mid
+	  bne  hexo
+	  txa
+	  bit  omode
+	  bmi  hexout
+	  se c
+	  sbc  base/abs
+	  bit  omode
+	  bvs  hexout
+	  cl c
+	  adc  base/org
+	  @1$24
+hexo:	  txa
+hexout:	  pha
+	  lsra
+	  lsra
+	  lsra
+	  lsra
+	  tax
+	  lda  hextab,x
+	  jsr  output
+	  pla
+	  and  #15
+	  tax
+	  lda  hextab,x
+	  jmp  output
+
+newl:	  lda  #asc("$")
+	  jsr  output
+	  lda  a+1
+	  jsr  absout
+	  bcs  e1
+	  lda  a
+	  jsr  hexout
+	  ldx  #1
+spc:	  txa
+	  beq  e1
+l1:	  lda  #32
+	  jsr  output
+	  dex
+	  bne  l1
+e1:	  rts
+
+hexline:  ;   a to b-1
+	  newl
+	  lda  a
+	  and  #7
+	  tax
+	  lda  hexposx,x
+	  tax
+	  spc
+	  lda  a
+	  pha
+hex*:	  ldy  #0
+	  lda  (a),y
+	  jsr  hexout
+	  lda  #32
+	  jsr  output
+	  ldx  a
+	  inx
+	  stx  a
+	  cpx  b
+	  bne  nn1
+	  lda  a+1
+	  cmp  b+1
+	  beq  ee1
+nn1:	  txa
+	  and  #7
+	  bne  hex*
+ee1:	  txa
+	  xor  #7
+	  cl c
+	  adc  #1
+	  and  #7
+	  tax
+	  lda  hexposx,x
+	  se c
+	  sbc  #1
+	  tax
+	  spc
+	  pla
+	  sta  a
+	  and  #7
+	  tax
+	  spc
+hex*2:	  ldy  #0
+	  lda  (a),y
+	  and  #127
+	  cmp  #32
+	  bcs  skp2
+	  lda  #asc(".")
+skp2:	  jsr  output
+	  ldx  a
+	  inx
+	  stx  a
+	  cpx  b
+	  bne  nn2
+	  lda  a+1
+	  cmp  b+1
+	  beq  ee2
+nn2:	  txa
+	  and  #7
+	  bne  hex*2
+ee2:	  lda  #13
+	  jsr  output
+	  txa
+	  bne  isend?
+	  inc  a+1
+isend?:	  lda  a+1
+	  cmp  b+1
+	  bne  nn3
+	  lda  a
+	  cmp  b
+nn3:	  rts
+
+assline:  ;   a to b-1
+	  newl
+	  ldy  #0
+	  lda  (a),y
+	  tay
+	  lda  asstaba,y
+	  cout
+	  lda  asstabb,y
+	  cout
+	  lda  asstabc,y
+	  cout
+	  lda  asstabd,y
+	  cout
+	  lda  asstabd,y
+	  and  #$c0
+	  cmp  #$80
+	  bcs  ass*
+	  lda  #1
+eadd:	  cl c
+	  adc  a
+	  sta  a
+	  bcc  ass*2
+	  inc  a+1
+ass*2:	  lda  #13
+	  jsr  output
+	  jmp  isend?
+ass*:	  beq  2byte
+	  lda  #asc("$")
+	  jsr  output
+	  ldy  #2
+	  lda  (a),y
+	  jsr  absout
+	  ldy  #1
+	  lda  (a),y
+	  jsr  hexout
+	  lda  #3
+	  jmp  eadd
+2byte:	  lda  asstaba,y
+	  and  #$40
+	  bne  relative
+	  lda  #asc("$")
+	  jsr  output
+	  ldy  #1
+	  lda  (a),y
+	  jsr  hexout
+	  lda  #2
+	  jmp  eadd
+relative: lda  #asc("$")
+	  jsr  output
+	  cl c
+	  lda  a
+	  adc  #2
+	  sta  hlp
+	  lda  a+1
+	  adc  #0
+	  sta  hlp+1
+	  ldy  #1
+	  lda  (a),y
+	  bmi  sub
+	  adc  hlp
+	  sta  hlp
+	  lda  hlp+1
+	  adc  #0
+	  jmp  relou
+sub:	  adc  hlp
+	  sta  hlp
+	  lda  hlp+1
+	  sbc  #0
+relou:	  jsr  absout
+	  lda  hlp
+	  jsr  hexout
+	  lda  #2
+	  jmp  eadd
+
+showline: lda  #1
+	  bit  omode
+	  beq  isass
+	  jsr  hexline
+	  bcc  ise
+	  dec  omode
+	  lda  #$ff
+	  sta  b
+	  sta  b+1
+ise:	  cl c
+	  rts
+isass:	  ldy  #0
+	  lda  (a),y
+	  pha
+	  jsr  assline
+	  pla
+	  cmp  #$0c
+	  beq  swtohex
+	  cmp  #2
+	  beq  swnoass
+	  cl c
+	  rts
+swnoass:  inc  omode
+	  lda  #$ff
+	  sta  b
+	  sta  b+1
+	  cl c
+	  rts
+swtohex:  ldy  #255
+	  dec  a+1
+	  lda  (a),y
+	  se c
+	  sbc  base/org
+	  cl c
+	  adc  base/abs
+	  sta  b+1
+	  dey
+	  lda  (a),y
+	  sta  b
+	  inc  omode
+	  inc  a+1
+	  cl c
+	  rts
+
+	  #add ldblab output die absout hexout hexline showline newl spc omode dmid
+	  #add ldblab pipout
+	  #add ldblab ipid pidlo pidhi string stat mid cleanup base/org base/abs
+	  #next ldb.1a
+
+------------------------------------------------------------
+*** FILE ".ldb.1a"
+
+	  #include ldblab
+	  #rm com.file com.disass com.hexdump getnum getadr
+	  strout=$905d
+
+strbit:	  bit  string
+com.file: txa
+	  pha
+	  jsr  cleanup
+	  bit  stat
+	  bvc  oksuc
+	  lda  mid
+	  ldx  #0
+	  stx  stat
+	  jsr  $9075
+oksuc:	  pla
+	  tax
+	  lda  string,x
+	  beq  howfile
+	  inx
+	  cmp  #32
+	  bne  howfile
+	  lda  string,x
+	  beq  howfile
+	  cl c
+	  txa
+	  adc  strbit+1
+	  tax
+	  ldy  strbit+2
+	  bcc  oktol
+	  iny
+oktol:	  jsr  $904e
+	  bcs  iomis
+	  jsr  $9063
+	  bcc  fiok
+iomis:	  ldx  base+2
+	  jsr  strout
+	  bit  iomis.txt
+	  rts
+howfile:  ldx  base+2
+	  jsr  strout
+	  bit  howfile.txt
+	  rts
+fiok:	  sta  dmid
+	  sta  mid
+	  sta  a+1
+	  sta  base/abs
+	  lda  #0
+	  sta  a
+	  ldy  #9
+	  lda  (a),y
+	  sta  b
+	  iny
+	  lda  (a),y
+	  adc  a+1
+	  sta  b+1
+	  lda  omode
+	  ora  #1
+	  sta  omode
+	  ldy  #0
+	  lda  (b),y
+	  cmp  #$a9
+	  bne  noorg
+	  iny
+	  lda  (b),y
+	  sta  base/org
+lcont:	  lda  #$40
+	  sta  stat
+	  rts
+noorg:	  ldx  base+2
+	  jsr  strout
+	  bit  noorg.txt
+	  lda  base/abs
+	  sta  base/org
+	  jmp  lcont
+
+	  pjp  ov
+
+noorg.txt:text "Can't resolve org-adr. ->ma"
+	  @1#13
+	  @1#0
+howfile.txt:
+	  text "l <drv"
+	  @1#58
+	  text "file> loads a executable file"
+	  @1#13
+	  @1#0
+iomis.txt:text "ldb"
+	  @1#58
+	  text " I/O error"
+	  @1#13
+	  @1#0
+illmid.txt:
+	  text "ldb"
+	  @1#58
+	  text "Illegal MID"
+	  @1#13
+	  @1#0
+howtohex.txt:
+	  text "h {MID"
+	  @1#58
+	  text "}{adr} hexdump"
+	  @1#13
+	  @1#0
+howtodis.txt:
+	  text "d {MID"
+	  @1#58
+	  text "}{adr} disassemble"
+	  @1#13
+	  @1#0
+pgf.txt:  text "Illegal MID-offset"
+	  @1#13
+	  @1#0
+
+ov:
+com.disass:
+	  lda  string,x
+	  beq  disnoad
+	  jsr  getadr
+	  bcs  howtodis
+	  lda  omode
+	  and  #$fe
+	  sta  omode
+disnoad:  lda  #10
+	  pha
+dis*:	  jsr  pgchk
+	  jsr  showline
+	  pla
+	  se c
+	  sbc  #1
+	  bne  dis*-1
+	  rts
+howtodis: ldx  base+2
+	  jsr  strout
+	  bit  howtodis.txt
+	  rts
+
+pgchk:	  ldx  a+1
+	  lda  $c400,x
+	  cmp  dmid
+	  beq  to rts
+	  ldx  base+2
+	  jsr  strout
+	  bit  pgf.txt
+	  pla
+	  pla
+	  pla
+	  rts
+
+com.hexdump:
+	  lda  string,x
+	  beq  hexnoad
+	  jsr  getadr
+	  bcs  howtohex
+hexnoad:  lda  #10
+	  pha
+hex*:	  jsr  pgchk
+	  jsr  hexline
+	  pla
+	  se c
+	  sbc  #1
+	  bne  hex*-1
+	  rts
+howtohex: ldx  base+2
+	  jsr  strout
+	  bit  howtohex.txt
+	  rts
+
+getnum:	  lda  #0
+	  sta  hlp
+	  sta  hlp+1
+gg*:	  lda  string,x
+	  beq  wase
+	  cmp  #32
+	  bne  ggst
+	  inx
+	  bne  gg*
+wase:	  se c
+	  rts
+ggst:	  se c
+	  sbc  #48
+	  bcc  wase
+	  cmp  #10
+	  bcc  ggri
+	  and  #127
+	  sbc  #7
+	  cmp  #10
+	  bcc  wase
+	  cmp  #16
+	  bcs  wase
+ggri:	  asl  hlp
+	  rol  hlp+1
+	  bcs  wase
+	  asl  hlp
+	  rol  hlp+1
+	  bcs  wase
+	  asl  hlp
+	  rol  hlp+1
+	  bcs  wase
+	  asl  hlp
+	  rol  hlp+1
+	  bcs  wase
+	  ora  hlp
+	  sta  hlp
+ggnoa:	  inx
+	  lda  string,x
+	  beq  ggeon
+	  cmp  #58
+	  beq  ggeon
+	  cmp  #32
+	  bne  ggst
+ggeon:	  cl c
+	  rts
+
+getadr:	  jsr  getnum
+	  bcs  gg2wase
+	  cmp  #58
+	  beq  ggwasmid
+	  cmp  #0
+	  bne  gg2wase
+	  lda  mid
+	  sta  dmid
+	  bit  omode
+	  bvs  ggrst
+	  bmi  gabsmode
+	  se c
+	  sbc  base/org
+	  @1$2c
+gabsmode: lda  #0
+ggrst:	  cl c
+	  adc  hlp+1
+	  sta  a+1
+	  lda  hlp
+	  sta  a
+	  lda  #$ff
+	  sta  b
+	  sta  b+1
+	  cl c
+	  rts
+ggwasmid: lda  hlp+1
+	  bne  illmid
+	  ldy  hlp
+	  lda  $c400,y
+	  cmp  hlp
+	  bne  illmid
+	  sta  dmid
+	  inx
+	  jsr  getnum
+	  bcs  gg2wase
+	  cmp  #0
+	  bne  gg2wase
+	  lda  dmid
+	  jmp  ggrst
+illmid:	  ldx  base+2
+	  jsr  strout
+	  bit  illmid.txt
+gg2wase:  se c
+	  rts
+
+	  #add ldblab com.file com.disass com.hexdump getnum getadr
+	  #next ldb.1b
+
+------------------------------------------------------------
+*** FILE ".ldb.1b"
+
+	  #include ldblab
+	  #rm com.run com.continue com.tick input pupchk
+	  ptr=#2
+	  setsup=$9048
+	  strout=$905d
+
+
+input:	  jsr  stdin
+	  bcs  ee
+	  cmp  #3
+	  beq  ee
+	  rts
+ee:	  jmp  die
+
+	  pjp  ov
+
+pgone.txt:text "Process died"
+	  @1#13
+	  @1#0
+nofile.txt:
+	  text "No file loaded"
+	  @1#13
+	  @1#0
+przfail.txt:
+	  text "Can't start process"
+	  @1#13
+	  @1#0
+pnotrun.txt:
+	  text "Process is not running"
+	  @1#13
+	  @1#0
+isrunning.txt:
+	  text "Process is running"
+	  @1#13
+	  @1#0
+	  use1;tmode
+
+ov:
+pupchk:	  bit  stat
+	  bmi  toupok
+	  bvs  pnotrun
+	  jmp  nofile
+pnotrun:  ldx  base+2
+	  jsr  strout
+	  bit  pnotrun.txt
+	  se c
+	  rts
+toupok:	  lda  pidlo
+	  ldy  pidhi
+	  jsr  $9060
+	  bcs  killed
+	  cl c
+	  rts
+
+com.continue:
+	  lda  #$ff
+	  @1$2c
+com.tick: lda  #0
+	  sta  tmode
+	  jsr  pupchk
+	  bcs  to rts
+	  lda  #0
+	  sta  $c0c0,x
+	  sta  $c0e0,x
+	  lda  $c000,x
+	  and  #$bf
+	  sta  $c000,x
+	  jsr  $9000
+	  cl i
+	  jsr  runit
+	  jmp  stopit
+
+killed:	  jmp  pgone
+
+isrunning:ldx  base+2
+	  jsr  strout
+	  bit  isrunning.txt
+	  rts
+nofile:	  ldx  base+2
+	  jsr  strout
+	  bit  nofile.txt
+	  se c
+	  rts
+com.run:  bit  stat
+	  bmi  isrunning
+	  bvc  nofile
+	  ;   get params
+	  lda  string,x
+	  beq  nopar
+	  stx  hlp
+	  lda  #1
+	  jsr  $9072
+nopar:	  sta  hlp+1
+	  ldx  mid
+	  ldy  #8
+	  se i
+	  jsr  setsup
+	  cl i
+	  lda  hlp+1
+	  beq  oppip
+	  ldx  hlp
+	  ldy  #0
+	  sty  hlp
+	  tya
+	  sta  (hlp),y
+	  @1$24
+run*:	  inx
+	  iny
+	  lda  string,x
+	  sta  (hlp),y
+	  bne  run*
+	  ;   open pipes
+oppip:	  lda  #$40
+	  jsr  $9021
+	  stx  pipout
+	  txa
+	  se i
+	  ldx  mid
+	  ldy  #1
+	  jsr  setsup
+	  lda  base+2
+	  iny
+	  jsr  setsup
+	  lda  base+3
+	  iny
+	  jsr  setsup
+	  cl i
+	  ;  initiate process
+	  lda  #2
+	  ldx  mid
+	  jsr  $9045
+	  bcc  przok
+	  ldx  base+2
+	  jsr  strout
+	  bit  przfail.txt
+	  lda  #0
+	  sta  stat
+	  rts
+
+przok:	  sta  pidlo
+	  sty  pidhi
+	  lda  #128
+	  sta  stat
+
+stopit:	  cl i
+	  lda  pidlo
+	  ldy  pidhi
+	  se i
+	  jsr  $9060
+	  bcs  pgone
+	  lda  $c000,x
+	  and  #$40
+	  bne  stopit
+	  txa
+	  ldx  #$9
+	  ldy  ptr
+	  jsr  $9009
+	  bcs  stopit
+	  cl i
+	  rts
+
+pgone:	  lda  #0
+	  sta  stat
+	  ldx  base+2
+	  jsr  strout
+	  bit  pgone.txt
+	  se c
+	  rts
+
+edie:	  jmp  die
+
+runit:	  jsr  $9012
+	  bit  tmode
+	  bpl  to rts
+	  ldx  base+1
+	  jsr  $906f
+	  bcs  edie
+	  beq  nochar
+	  jsr  input
+	  cmp  #asc("")
+	  beq  to rts
+	  ldx  pipout
+	  jsr  $902d
+	  cl i
+nochar:	  jmp  runit
+
+	  #add ldblab com.run com.continue com.tick input pupchk
+	  #next ldb.1c
+
+------------------------------------------------------------
+*** FILE ".ldb.1c"
+
+	  #include ldblab
+	  #rm com.info getipid pcout ipid smid com.break
+	  strout=$905d
+
+	  pjp  ov
+
+pcout1.txt:
+	  text "pc="
+	  @1#0
+pcout2.txt:
+	  text " sr="
+	  @1#0
+pcout3.txt:
+	  text "  a="
+	  @1#0
+pcout4.txt:
+	  text " x="
+	  @1#0
+pcout5.txt:
+	  text " y="
+	  @1#0
+	  use1;ipid;smid
+ir1.txt:  text "stack"
+	  @1#0
+ir2.txt:  text "zp"
+	  @1#32
+	  @1#0
+
+ov:
+getipid:  jsr  pupchk
+	  bcs  gge
+	  stx  ipid
+	  lda  $c0a0,x
+	  sta  smid
+	  cl c
+gge:	  cl i
+	  rts
+
+pcout:	  lda  smid
+	  sta  hlp+1
+	  ldy  #0
+	  sty  hlp
+	  ldx  base+2
+	  jsr  strout
+	  bit  pcout1.txt
+	  ldy  #4
+	  lda  (hlp),y
+	  ;  se c
+	  ;  sbc##1
+	  pha
+	  iny
+	  lda  (hlp),y
+	  ;  sbc##0
+	  tax
+	  se c
+	  sbc  $c400,x
+	  pha
+	  lda  $c400,x
+	  jsr  hexout
+	  lda  #58
+	  jsr  output
+	  pla
+	  jsr  hexout
+	  pla
+	  jsr  hexout
+	  ldx  base+2
+	  jsr  strout
+	  bit  pcout2.txt
+	  ldy  #3
+	  lda  (hlp),y
+	  jsr  hexout
+	  ldx  base+2
+	  jsr  strout
+	  bit  pcout3.txt
+	  ldy  #2
+	  lda  (hlp),y
+	  jsr  hexout
+	  ldx  base+2
+	  jsr  strout
+	  bit  pcout4.txt
+	  ldy  #1
+	  lda  (hlp),y
+	  jsr  hexout
+	  ldx  base+2
+	  jsr  strout
+	  bit  pcout5.txt
+	  ldy  #0
+	  lda  (hlp),y
+	  jsr  hexout
+	  lda  #13
+	  jsr  output
+	  rts
+
+com.info: jsr  getipid
+	  bcs  to rts
+	  ;   pc= sr= a= x= y=
+	  jsr  pcout
+	  ;   stack
+	  ldx  base+2
+	  jsr  strout
+	  bit  ir1.txt
+	  ldx  ipid
+	  lda  $c040,x
+	  cmp  #7
+	  bcc  eos
+	  ldy  #6
+es*:	  lda  #32
+	  jsr  output
+	  lda  (hlp),y
+	  jsr  hexout
+	  iny
+	  cpy  #30
+	  beq  eos
+	  tya
+	  ldx  ipid
+	  cmp  $c040,x
+	  bne  es*
+eos:	  lda  #13
+	  jsr  output
+	  ;   zeropage
+	  ldx  base+2
+	  jsr  strout
+	  bit  ir2.txt
+	  ldx  ipid
+	  lda  $c060,x
+	  jsr  hexout
+	  ldx  ipid
+	  lda  $c020,x
+	  tay
+	  lda  $c080,x
+	  beq  eozp
+	  cmp  #10
+	  bcc  es3*
+	  lda  #10
+es3*:	  sta  ipid
+es2*:	  lda  #32
+	  jsr  output
+	  lda  (hlp),y
+	  jsr  hexout
+	  iny
+	  dec  ipid
+	  bne  es2*
+eozp:	  lda  #13
+	  jsr  output
+	  rts
+
+com.break:jsr  pupchk
+	  bcs  to rts
+	  lda  #3
+	  ldx  pipout
+	  jsr  $902d
+	  cl i
+	  rts
+
+	  #add ldblab com.info getipid pcout ipid smid com.break
+	  #next ldb.1d
+
+------------------------------------------------------------
+*** FILE ".ldb.1d"
+
+
+	  #include ldblab
+	  #rm com.sendsig
+	  strout=$905d
+
+	  pjp  ov
+
+howsig.txt:
+	  text "s #signum   (1..16)"
+	  @1#13
+	  text "  sends signal to process"
+	  @1#13
+	  @1#0
+notsend.txt:
+	  text "process doesn't support this signal"
+	  @1#13
+	  @1#0
+
+ov:
+com.sendsig:
+	  stx  hlp
+	  jsr  getipid
+	  bcs  s.end
+	  ldx  hlp
+	  jsr  getnum
+	  bcs  howsig
+	  lda  string,x
+	  bne  howsig
+	  lda  hlp+1
+	  bne  howsig
+	  ldx  hlp
+	  beq  howsig
+	  cpx  #16
+	  bcs  howsig
+	  lda  ipid
+	  jsr  $904b
+	  cl i
+	  bcs  notsend
+s.end:	  rts
+notsend:  ldx  base+2
+	  jsr  strout
+	  bit  notsend.txt
+	  rts
+howsig:	  ldx  base+2
+	  jsr  strout
+	  bit  howsig.txt
+	  rts
+
+	  #add ldblab com.sendsig
+	  #next ldb.2
+
+------------------------------------------------------------
+*** FILE ".ldb.2"
+
+	  ;   ldb.2
+	  #include ldblab
+	  #rm init com.mode com.exit
+	  strout=$905d
+
+	  pjp  ov
+
+prompt:	  text "ldb>"
+	  @1#32
+	  @1#0
+backspc:  @1#157
+	  @1#32
+	  @1#157
+	  @1#0
+commhelp: text "Available commands"
+	  @1#58
+	  @1#32
+comms:	  text "frdhsitmcbx"
+	  @1#13
+	  @1#0
+inittxt:  text "LUnix Debug Version 1.0"
+	  @1#13
+	  text "  by Poldi  4.3.1996"
+	  @1#13
+	  @1#0
+howmode:  text "m- change address-display mode"
+	  @1#13
+	  text " o original"
+	  @1#13
+	  text " r relative"
+	  @1#13
+	  text " a absolute"
+	  @1#13
+	  @1#0
+
+ov:
+commjmp:  jmp  com.file
+	  nop
+	  jmp  com.run
+	  nop
+	  jmp  com.disass
+	  nop
+	  jmp  com.hexdump
+	  nop
+	  jmp  com.sendsig
+	  nop
+	  jmp  com.info
+	  nop
+	  jmp  com.tick
+	  nop
+	  jmp  com.mode
+	  nop
+	  jmp  com.continue
+	  nop
+	  jmp  com.break
+	  nop
+	  jmp  com.exit
+
+getline:  ldx  base+2
+	  jsr  strout
+	  bit  prompt
+	  ldx  #0
+*:	  jsr  input
+	  cmp  #13
+	  beq  eol
+	  cmp  #20
+	  beq  back
+	  cmp  #32
+	  bcc  *
+	  cpx  #39
+	  bcs  *
+	  ;  add to string
+	  sta  string,x
+	  inx
+	  jsr  output
+	  jmp  *
+back:	  cpx  #0
+	  beq  *
+	  stx  hlp
+	  ldx  base+2
+	  jsr  strout
+	  bit  backspc
+	  ldx  hlp
+	  dex
+	  jmp  *
+eol:	  lda  #13
+	  jsr  output
+	  lda  #0
+	  sta  string,x
+	  rts
+
+findcom:  ldx  #0
+fn*:	  lda  string,x
+	  beq  nocom
+	  inx
+	  cmp  #32
+	  beq  fn*
+	  ldy  #0
+sc*:	  cmp  comms,y
+	  beq  hc*
+	  iny
+	  ;   number of commands=11
+	  cpy  #11
+	  bne  sc*
+cer:	  ldx  base+2
+	  jsr  strout
+	  bit  commhelp
+nocom:	  se c
+	  rts
+hc*:	  cl c
+	  rts
+
+init:	  ldx  base+2
+	  jsr  strout
+	  bit  inittxt
+
+	  lda  #0
+	  sta  stat
+
+**:	  jsr  getline
+	  jsr  findcom
+	  bcs  **
+
+	  tya
+	  asla
+	  asla
+	  tay
+	  lda  commjmp+1,y
+	  sta  adr/lo
+	  lda  commjmp+2,y
+	  sta  adr/hi
+xx:	  jsr  64738
+	  adr/lo=<xx+1
+	  adr/hi=<xx+2
+
+	  jmp  **
+
+com.exit: jmp  die
+
+com.mode: lda  string,x
+	  cmp  #asc("o")
+	  beq  tomodeorg
+	  cmp  #asc("r")
+	  beq  tomoderel
+	  cmp  #asc("a")
+	  beq  tomodeabs
+	  ldx  base+2
+	  jsr  strout
+	  bit  howmode
+	  rts
+tomodeorg:lda  #0
+	  @1$2c
+tomoderel:lda  #$40
+	  @1$2c
+tomodeabs:lda  #$80
+	  xor  omode
+	  and  #$c0
+	  xor  omode
+	  sta  omode
+	  rts
+
+	  @1#2
+
+	  #add ldblab com.mode com.exit init
+	  #next nofile
+
+ Written by Poldi 17.3.1996
+    <Daniel.Dallmann@studbox.uni-stuttgart.de>
+

@@ -1,0 +1,1305 @@
+Init.exe is the very first process, started by the system.
+Init also manages the screen (the splitted screen), loads
+and executes shells (when you press F3) and passes the
+key-strokes to them.
+
+NEW:
+     - init tries to execute a script file (".initrc")
+       Format of this .initrc file is
+         #!<command>
+         <line1>
+         <line2>
+         ...
+       The specified command will be executed (eg. @:sh0.exe) and
+       all the following lines will be passed to its' standard input.
+       (RUN/STOP will terminate the execution, SPACE will give
+       you more time to read the output).
+
+     - init can pass the controll of the entire screen+keyboard to
+       other processes. (press F8 to switch to an other fullscreen
+       application). I'll soon write a sceleton for fullscreen
+       applications.
+
+       This is still beta, so if you find a bug or have ideas for some
+       other usefull features, let me know.
+                                                                                                                  
+I'll append the executable in uuencoded format and the assembler
+source. (you will need cbm_bios.h and kernel.inc to compile it)
+
+begin 644 init.exe
+M__\``0P`Q-D$`!Q``````````````````````$Q[$````````$Q;$```````
+M`````````````````$-/3E-/3$4`J1`@49!,F18,6Q``````````````````
+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
+M05(Q-B`Q.3DW#0T`1$].12X-````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+=``````````````````````````````````````(`
+`
+end
+
+
+;***********************************************************
+; source code of the file named "init.exe" in LUnix V0.1
+;
+; init is the first process. init does the screen management
+;
+; version V1.2
+;***********************************************************
+
+#include "kernel.inc"
+#include "cbm_bios.h"
+
+#define  char_map    $0400
+#define  color_map   $d800
+#define  bg_color    $d020
+#define  fg_color    $d021
+
+.header "console" , p1l,p1h,p2l,p2h
+
+
+          ;  first console.exe prozess code
+          ;    output to screen 24x40
+          ;    input from keyboard
+          ;      using the old irq
+          
+.data
+          xp1:      .byte 0
+          yp1:      .byte 0
+          hide1:    .byte 0
+          xp2:      .byte 0
+          yp2:      .byte 0
+          hide2:    .byte 0
+          stat:     .byte 0
+          flag:     .byte 0
+          inpipe1:  .byte 0
+          outpipe1: .byte 0
+          inpipe2:  .byte 0
+          outpipe2: .byte 0
+          pid1lo:   .byte 0
+          pid1hi:   .byte 0
+          pid2lo:   .byte 0
+          pid2hi:   .byte 0
+
+.code
+
+_cleanup:
+          sei
+          lda  _base+4
+          and  #$41
+          beq  +
+
+          ldx  #1              ; included because of kernel bug
+          jsr  unlock
+          ldx  #7
+          jsr  unlock
+
+          lda  #0              ; for debugging (black screen)
+          sta  fg_color
+          sta  bg_color
+
+        + ldx  #0
+          jsr  unlock
+          rts
+
+_sig.userbreak:
+          ldx  stdout_ch
+          jsr  strout
+          bit  txt_ubreak
+          
+          bit  stat
+          bvc  +
+
+          ldx  inpipe1
+          jsr  pclose
+          ldx  outpipe1
+          jsr  pclose
+        
+          bit  stat
+        + bpl  +
+
+          ldx  inpipe2
+          jsr  pclose
+          ldx  outpipe2
+          jsr  pclose
+
+        + lda  #$ff
+          jmp  suicide
+
+main_loop:
+          cli
+          jsr  keyin
+          cmp  #0
+          bne  +
+          sta  flag
+
+          bit  stat
+          bvc  no1st
+          ldx  inpipe1
+          jsr  pipe_chk
+          bcs  ++
+          beq  no1st
+          ldx  inpipe1
+          jsr  pgetc
+          bcs  ++
+          jsr  out1
+          inc  flag
+          jmp  no1st
+
+        + jmp  gotakey
+
+        + ldx  inpipe1         ; kill shell in window 1 (i/o error)
+          jsr  pclose
+          ldx  outpipe1
+          jsr  pclose
+          lda  #0
+          sta  p1h
+          jsr  clr1
+          lda  stat
+          and  #$80
+          bpl  +
+          ora  #2
+        + sta  stat            ; switch to 2nd window if possible
+          bpl  no1st
+          lda  #15
+          jsr  setcol2
+
+no1st:    bit  stat
+          bpl  main_end
+
+          ldx  inpipe2
+          jsr  pipe_chk
+          bcs  +
+          beq  main_end
+          ldx  inpipe2
+          jsr  pgetc
+          bcs  +
+          jsr  out2
+          inc  flag
+main_end:
+          cli
+          lda  flag
+          bne  main_loop
+          jsr  break           ; nothing to do so have a break
+          jmp  main_loop
+
+        + ldx  inpipe2         ; kill shell in window 2 (i/o error)
+          jsr  pclose
+          ldx  outpipe2
+          jsr  pclose
+          lda  #0
+          sta  p2h
+          jsr  clr2
+          lda  stat            ; switch to window 1 if possible
+          and  #$40
+          beq  +
+          ora  #1
+        + sta  stat
+          and  #$40
+          beq  main_end
+          lda  #15
+          jsr  setcol1
+          jmp  main_end
+
+sendstop: lda  stat
+          and  #3
+          beq  +++
+          cmp  #1
+          beq  +
+          lda  pid2lo          ; send stop to win2
+          ldy  pid2hi
+          jmp  ++
+
+        + lda  pid1lo          ; send stop to win1
+          ldy  pid1hi
+
+        + jsr  getipid
+          bcs  +
+          txa
+          ldx  #6              ; send signal 6 ("user break")
+          jsr  send_signal
+        + cli
+          jmp  main_loop
+
+_keyf8:   jmp  keyf8
+
+gotakey:  cmp  #3
+          beq  sendstop
+
+          cmp  #133
+          beq  keyf1
+          cmp  #134
+          beq  keyf3
+          cmp  #140
+          beq  _keyf8
+
+        - jmp  main_loop
+
+keyf1:    ;  means next session
+          lda  stat
+          and  #$c0
+          beq  -
+          bpl  +
+          and  #$40
+          beq  ++
+          lda  stat
+          eor  #3
+          sta  stat
+          and  #3
+          cmp  #1
+          beq  +
+          cmp  #2
+          beq  ++
+          lda  stat
+          and  #$c0
+          ora  #1
+          sta  stat
+
+        + lda  stat            ; switch to window 1
+          and  #$c0
+          ora  #1
+          sta  stat
+          lda  #15
+          jsr  setcol1
+          lda  #11
+          jsr  setcol2
+        - jmp  main_loop
+
+        + lda  stat            ; switch to window 2
+          and  #$c0
+          ora  #2
+          sta  stat
+          lda  #15
+          jsr  setcol2
+          lda  #11
+          jsr  setcol1
+          jmp  main_loop
+
+keyf3:    lda  stat            ; means add session
+          and  #$c0
+          cmp  #$c0
+          beq  -
+          lda  $c2b0           ; (dirty hack, choose boot-driver)
+          ldx  txtptr          ; string "sh0.exe\n"
+          ldy  txtptr+1
+          jsr  pload           ; pload
+          bcs  -
+          sta  flag
+          lda  #$80
+          jsr  popen           ; open pipe
+          txa
+          pha
+          lda  #$40
+          jsr  popen           ; open pipe
+          pla
+          bit  stat
+          bpl  +
+
+          stx  outpipe1
+          sta  inpipe1
+          jmp  ++
+
+        + stx  outpipe2
+          sta  inpipe2
+
+        + pha
+          txa
+          ldy  #1
+          ldx  flag
+          jsr  setsup           ; setsup (stdin-channel)
+          iny
+          pla
+          jsr  setsup           ; setsup (stdout-channel)
+          iny
+          jsr  setsup           ; setsup (=stderr-channel)
+          txa
+          ldy  #0
+          jsr  setsup           ; setsup (set new base-address)
+          ldy  #8
+          lda  #0
+          jsr  setsup           ; setsup (set parameter-page=none)
+          lda  #1
+          jsr  init_process           ; init process (priority=1)
+          bcc  +
+          lda  #255
+          tay
+        + tax
+          lda  stat
+          bpl  +
+          ora  #$40            ; bind new shell to window 1
+          sta  stat
+          stx  pid1lo
+          sty  pid1hi
+          lda  #11
+          jsr  setcol1
+          jmp  main_loop
+
+        + ora  #$80            ; bind new shell to window 2
+          sta  stat
+          stx  pid2lo
+          sty  pid2hi
+          lda  #11
+          jsr  setcol2
+          jmp  main_loop
+
+          .byte $2c
+txtptr:   .byte <default_shell_name
+          .byte >default_shell_name
+
+.data
+
+txtend:   .asc "couldn't exec (#1 or #7 is locked)\n\0"
+
+txt.line: .asc "f1-next session   f3-add a session      ;"
+txt_ubreak: .asc "shutting down...\n\0"
+
+default_shell_name:
+          .asc "sh0.exe\0"
+
+l_91:     .byte $ff
+
+.code
+
+keyin:    sei
+          ldx  l_91
+          lda  $91
+          sta  l_91
+          bmi  +
+          txa
+          bpl  +
+          cli
+          lda  #3              ; return RUN/STOP code
+        - rts
+
+        + ldx  198
+          beq  key_exit+1
+          jsr  $e5b4           ;  get character code from buffer
+          cli
+          cmp  #133            ; immediately return F1
+          beq  -
+          cmp  #134            ; F3
+          beq  -
+          cmp  #140            ; and F8 key codes
+          beq  -
+          pha
+          lda  stat
+          and  #3
+          beq  key_exit
+          cmp  #2
+          beq  +
+          ldx  outpipe1
+          jmp  ++
+
+        + ldx  outpipe2
+        + sei
+          beq  key_exit
+          lda  $c600,x
+          beq  key_exit
+          sta  _hl+1
+          lda  $c500,x
+          sta  _hl
+          ldy  #1
+          lda  (_hl),y
+          and  #$20
+          bne  key_exit
+          pla
+          jsr  pputc
+          cli
+          .byte $24
+
+key_exit: pla
+
+          lda  #0
+          rts
+          
+setcol1:  ldy  #0
+          sei
+        - sta  color_map+0,y   ; begin with 0 = line 0
+          sta  color_map+184,y ; 184+256=440 (11 lines)
+          iny
+          bne  -
+          cli
+          rts
+          
+setcol2:  ldy  #0
+          sei
+        - sta  color_map+480,y ; begin with 480 = line 12
+          sta  color_map+704,y ; 704+256 - 480=480 (12 lines)
+          iny
+          bne  -
+          cli
+          rts
+          
+clr1:     lda  #32
+          sei
+          ldy  #0
+        - sta  char_map+0,y
+          sta  char_map+184,y ; again (11 lines)
+          iny
+          bne  -
+          cli
+          rts
+          
+clr2:     lda  #32
+          sei
+        - sta  char_map+480,y
+          sta  char_map+704,y ; again 12 lines
+          iny
+          bne  -
+          cli
+          rts
+
+screen_init:
+          lda  #12             ; change colors
+          sta  fg_color
+          lda  #0
+          sta  bg_color
+
+          jsr  clr1            ; clear both screens
+          jsr  clr2
+          lda  #11
+          jsr  setcol1         ; set colors
+          jsr  setcol2
+
+          ldx  #39             ; draw line and help bar
+        - lda  #"-"
+          sta  char_map+440,x
+          lda  #11
+          sta  color_map+440,x
+          lda  txt.line,x
+          sta  char_map+960,x
+          lda  #1
+          sta  color_map+960,x
+          dex
+          bpl  -
+          rts
+
+keyf8:    ; release screen and keyboard, but don't exit
+          lda  p1l
+          pha
+          lda  p1h
+          pha
+          lda  p2l
+          pha
+          lda  p2h
+          pha
+
+          lda  #4
+          jsr  malloc
+          sta  p1h
+          ldy  #0
+          sty  p1l
+          sty  p2l
+          lda  #>char_map
+          sta  p2h
+          ldx  #4
+
+        - lda  (p2l),y
+          sta  (p1l),y
+          iny
+          bne  -
+          inc  p1h
+          inc  p2h
+          dex
+          bne  -
+
+          lda  #6
+          sta  fg_color
+          sta  bg_color        ; for debugging (blue screen)
+
+          ldx  #1
+          jsr  unlock
+          ldx  #7
+          jsr  unlock
+          jsr  break           ; let other processes take screen/keyboard
+          ldx  #1
+          jsr  lock
+          ldx  #7
+          jsr  lock
+
+          jsr  screen_init     ; restore screen colors
+          ldx  #4
+          ldy  #0
+
+        - dec  p1h             ; restore screen
+          dec  p2h
+        - lda  (p1l),y
+          sta  (p2l),y
+          iny
+          bne  -
+          dex
+          bne  --
+
+          lda  p1h
+          jsr  mfree
+
+          pla
+          sta  p2h
+          pla
+          sta  p2l
+          pla
+          sta  p1h
+          pla
+          sta  p1l
+
+          jmp  main_loop
+          
+;-----------------------window 1-----------------------
+
+w1_makclr:
+          jsr  clr1
+w1_makhome:
+          lda  #0
+          sta  p1h
+          rts
+
+        - jmp  w1_makret
+
+out1:     ldx  p1h
+          bne  +
+
+          pha
+          lda  #0
+          sta  xp1
+          sta  yp1
+          sta  p1l
+          lda  #>char_map
+          sta  p1h
+          ldy  #0
+          lda  (p1l),y
+          sta  hide1
+          lda  #100
+          sta  (p1l),y
+          pla
+
+        + cmp  #32             ; ascii to petscii
+          bcc  ++
+          cmp  #64
+          bcc  +++++           ; skip conversion
+          cmp  #96
+          bcc  +++             ; subtract 64
+          cmp  #128
+          bcc  ++++            ; subtract 32
+          and  #127
+          cmp  #32
+          bcc  +
+          cmp  #96
+          bcc  +++++           ; skip conversion
+        + ora  #128
+        + tax
+          ldy  #0
+          lda  hide1
+          sta  (p1l),y
+          cpx  #147
+          beq  w1_makclr
+          cpx  #19
+          beq  w1_makhome
+          cpx  #29
+          beq  w1_makright
+          cpx  #157
+          beq  w1_makleft
+          cpx  #17
+          beq  w1_makdown
+          cpx  #145
+          beq  w1_makup
+          cpx  #13
+          beq  w1_makcr
+          cpx  #10
+          beq  -
+          jmp  w1_setcsr
+
+        + sbc  #32             ; -64
+        + sbc  #31             ; -32
+        + sta  hide1           ; +/- 0
+
+w1_makright:
+          ldx  xp1
+          cpx  #39
+          beq  +
+          inx
+          stx  xp1
+          lda  hide1
+          ldy  #0
+          sta  (p1l),y
+          inc  p1l
+          bne  w1_setcsr
+          inc  p1h
+
+w1_setcsr: ldy  #0
+          lda  (p1l),y
+          sta  hide1
+          lda  #100
+          sta  (p1l),y
+        + rts
+
+w1_makleft:
+          ldx  xp1
+          beq  w1_setcsr
+          dex
+          stx  xp1
+          lda  p1l
+          bne  +
+          dec  p1h
+        + dec  p1l
+          jmp  w1_setcsr
+
+w1_makup:
+          ldx  yp1
+          beq  w1_setcsr
+          dex
+          stx  yp1
+          sec
+          lda  p1l
+          sbc  #40
+          sta  p1l
+          bcs  w1_setcsr
+          dec  p1h
+          jmp  w1_setcsr
+
+w1_makdown:
+          ldx  yp1
+          cpx  #10
+          beq  +
+          inx
+          stx  yp1
+          clc
+          lda  p1l
+          adc  #40
+          sta  p1l
+          bcc  w1_setcsr
+          inc  p1h
+          jmp  w1_setcsr
+
+        + jsr  w1_movup
+          jmp  w1_setcsr
+
+w1_makcr:
+          ldx  yp1
+          cpx  #10
+          beq  ++              ; last line, then scroll
+          inx
+          stx  yp1
+          clc
+          lda  p1l
+          adc  #40
+          sta  p1l
+          bcc  w1_makret
+          inc  p1h
+
+w1_makret:
+          sec
+          lda  p1l
+          sbc  xp1
+          sta  p1l
+          bcs  +
+          dec  p1h
+        + sty  xp1
+          jmp  w1_setcsr
+
+        + jsr  w1_movup
+          ldy  #0
+          jmp  w1_makret
+
+w1_movup:
+          sei
+          ldy  #0
+        - lda  char_map+40,y
+          sta  char_map,y
+          iny
+          bne  -
+        - lda  char_map+$100+40,y
+          sta  char_map+$100,y
+          iny
+          cpy  #144
+          bne  -
+          lda  #32
+          ldx  #39
+        - sta  char_map+400,x ; clear line 10
+          dex
+          bpl  -
+          cli
+          rts
+          
+;------------------------window 2--------------------------
+
+w2_makclr:
+          jsr  clr2
+w2_makhome:
+          lda  #0
+          sta  p2h
+          rts
+
+        - jmp  w2_makret
+
+out2:     ldx  p2h
+          bne  +
+
+          pha
+          lda  #0
+          sta  xp2
+          sta  yp2
+          lda  #<(char_map+480)
+          sta  p2l
+          lda  #>(char_map+480)
+          sta  p2h
+          ldy  #0
+          lda  (p2l),y
+          sta  hide2
+          lda  #100
+          sta  (p2l),y
+          pla
+
+        + cmp  #32             ; ascii to petscii
+          bcc  ++
+          cmp  #64
+          bcc  +++++           ; skip conversion
+          cmp  #96
+          bcc  +++             ; subtract 64
+          cmp  #128
+          bcc  ++++            ; subtract 32
+          and  #127
+          cmp  #32
+          bcc  +
+          cmp  #96
+          bcc  +++++           ; skip conversion
+        + ora  #128
+        + tax
+          ldy  #0
+          lda  hide2
+          sta  (p2l),y
+          cpx  #147
+          beq  w2_makclr
+          cpx  #19
+          beq  w2_makhome
+          cpx  #29
+          beq  w2_makright
+          cpx  #157
+          beq  w2_makleft
+          cpx  #17
+          beq  w2_makdown
+          cpx  #145
+          beq  w2_makup
+          cpx  #13
+          beq  w2_makcr
+          cpx  #10
+          beq  -
+          bne  w2_setcsr
+
+        + sbc  #32             ; -64
+        + sbc  #31             ; -32
+        + sta  hide2           ; +/- 0
+
+w2_makright:
+          ldx  xp2
+          cpx  #39
+          beq  +
+          inx
+          stx  xp2
+          lda  hide2
+          ldy  #0
+          sta  (p2l),y
+          inc  p2l
+          bne  w2_setcsr
+          inc  p2h
+
+w2_setcsr: ldy  #0
+          lda  (p2l),y
+          sta  hide2
+          lda  #100
+          sta  (p2l),y
+        + rts
+
+w2_makleft:
+          ldx  xp2
+          beq  w2_setcsr
+          dex
+          stx  xp2
+          lda  p2l
+          bne  +
+          dec  p2h
+        + dec  p2l
+          jmp  w2_setcsr
+
+w2_makup:
+          ldx  yp2
+          beq  w2_setcsr
+          dex
+          stx  yp2
+          sec
+          lda  p2l
+          sbc  #40
+          sta  p2l
+          bcs  w2_setcsr
+          dec  p2h
+          jmp  w2_setcsr
+
+w2_makdown:
+          ldx  yp2
+          cpx  #11
+          beq  +
+          inx
+          stx  yp2
+          clc
+          lda  p2l
+          adc  #40
+          sta  p2l
+          bcc  w2_setcsr
+          inc  p2h
+          jmp  w2_setcsr
+
+        + jsr  w2_movup
+          jmp  w2_setcsr
+
+w2_makcr:
+          ldx  yp2
+          cpx  #11
+          beq  ++              ; last line, then scroll
+          inx
+          stx  yp2
+          clc
+          lda  p2l
+          adc  #40
+          sta  p2l
+          bcc  w2_makret
+          inc  p2h
+
+w2_makret:
+          sec
+          lda  p2l
+          sbc  xp2
+          sta  p2l
+          bcs  +
+          dec  p2h
+        + sty  xp2
+          jmp  w2_setcsr
+
+        + jsr  w2_movup
+          ldy  #0
+          jmp  w2_makret
+
+w2_movup:
+          sei
+          ldy  #0
+        - lda  char_map+480+40,y
+          sta  char_map+480,y
+          iny
+          bne  -
+        - lda  char_map+736+40,y
+          sta  char_map+736,y
+          iny
+          cpy  #184
+          bne  -
+          lda  #32
+          ldx  #39
+        - sta  char_map+920,x  ; clear line 23
+          dex
+          bpl  -
+          cli
+          rts
+
+end_of_permanent_code:
+
+;*********************************************************************
+
+_init:
+          sei
+          ldx  ipid            ; fixing a very ugly kernel bug i've
+          lda  #p1l            ; discovered now (2 years after release
+          sta  $c060,x         ; of the kernel!!)
+          lda  #4              ; MUST be used with every "init.exe"
+          sta  $c080,x         ; replacement !!
+
+          lda  $c268
+          and  #$41
+          beq  +               ; check if keyboard/screen is available
+
+          ldx  stderr_ch       ; exit with errormessage
+          jsr  strout
+          bit  txtend
+          lda  #$ff
+          jmp  suicide
+
+          ; out1, out2, keyin, clr1, clr2
+          ; setcol1, setcol2
+
+        + ldx  #1
+          jsr  lock
+          ldx  #7
+          jsr  lock           ; lock keyboard and screen
+
+          jsr  console_init
+          ldx  reloc_tab+25   ; txt_up
+          ldy  reloc_tab+26
+          jsr  print_console
+          jsr  initrc
+
+          ldx  reloc_tab+28
+          ldy  reloc_tab+29
+          jsr  print_console
+          ldy  #0             ; short pause
+          ldx  #5
+          stx  ch_in
+
+        - inx
+          bne  -
+          iny
+          bne  -
+          dec  ch_in
+          bne  -
+
+          lda  #$7f
+          sta  $dc00
+          lda  #$ff
+          sta  $dc02
+          lda  #$00
+          sta  $dc03
+        - lda  $dc01           ; check for SPACE
+          and  #$10
+          beq  -
+
+          lda  #0
+          sta  stat
+          sta  p2h
+          sta  p1h
+
+          jsr  screen_init
+
+          sei
+          ; remove init code
+          clc
+          lda  #(>(end_of_permanent_code-_base-1))+1
+          adc  _base
+          tax
+          tay
+
+        - lda  $c3ff,x
+          cmp  $c400,y
+          bne  +
+          txa
+          sta  $c400,y
+          iny
+          bne  -
+
+        + txa
+          jsr  raw_mfree
+          jmp  main_loop
+
+console_init:
+
+          lda  #11             ; change colors
+          sta  fg_color
+          lda  #0
+          sta  bg_color
+
+          lda  #>char_map
+          sta  p1h
+          lda  #>color_map
+          sta  p2h
+          ldy  #0
+          sty  p1l
+          sty  p2l
+          ldx  #4
+
+        - lda  #32
+          sta  (p1l),y
+          lda  #3
+          sta  (p2l),y
+          iny
+          bne  -
+          inc  p1h
+          inc  p2h
+          dex
+          bne  -
+
+          sty  p1h
+          rts
+
+put_console:
+          jmp  out1
+
+print_console:
+          stx  p2l
+          sty  p2h
+
+        - ldy  #0
+          lda  (p2l),y
+          beq  +
+          jsr  out1
+          inc  p2l
+          bne  -
+          inc  p2h
+          bne  -
+
+        + rts
+
+initrc:
+          ldx  reloc_tab+4     ; txt_initrc
+          ldy  reloc_tab+5
+          jsr  print_console
+          lda  #0
+          jsr  lock            ; lock serial (IEC) bus
+
+          lda  #1
+          ldx  #8
+          ldy  #5
+          jsr  bios_setfls
+          ldx  reloc_tab+1     ; ".initrc"
+          ldy  reloc_tab+2
+          lda  #init_file_length
+          jsr  bios_setnam
+          jsr  bios_open
+          bcs  io_error
+          ldx  #1
+          jsr  bios_chkin
+          bcc  +
+          
+io_error:
+          ldx  reloc_tab+7     ; txt_ioerror
+          ldy  reloc_tab+8
+          jmp  p_clall
+
+rctoolong:
+          ldx  reloc_tab+10    ; txt_rctoolong
+          ldy  reloc_tab+11
+
+p_clall:  jsr  print_console
+          jsr  bios_clrch
+          lda  #1
+          jsr  bios_close
+          lda  #0
+          jmp  unlock
+
+        + ;read up to 256 bytes into com_buffer
+          ldy  #0
+
+        - jsr  bios_get
+          bcs  io_error
+          sta  com_buffer,y
+          iny
+          beq  rctoolong
+          lda  bios_status
+          beq  -
+
+          and  #$40            ; check for EOF
+          beq  io_error
+          lda  #0
+          sta  com_buffer,y
+          jsr  p_clall+3
+
+          ;parsing com_buffer
+          lda  com_buffer
+          cmp  #"#"
+          bne  rcsyntax
+          lda  com_buffer+1
+          cmp  #"!"
+          bne  rcsyntax
+          ldy  #0
+
+        - lda  com_buffer+2,y
+          sta  shell_name,y
+          beq  ++
+          cmp  #32
+          bcc  +
+          iny
+          cpy  #17
+          bne  -
+
+rcsyntax: ldx  reloc_tab+13    ; txt_rcsyntax
+          ldy  reloc_tab+14
+          jmp  print_console
+ 
+        + ;pload command
+          lda  #0              ; terminate with zero
+          sta  shell_name,y
+          iny
+        + sty  buf_ptr         ; remember position
+          ldx  reloc_tab+19    ; txt_pload0
+          ldy  reloc_tab+20
+          jsr  print_console
+          ldx  reloc_tab+16    ; shell_name
+          ldy  reloc_tab+17
+          jsr  print_console
+          lda  #"\""
+          jsr  put_console
+          lda  #"\n"
+          jsr  put_console
+
+          ldx  reloc_tab+16    ; shell_name
+          ldy  reloc_tab+17
+          jsr  getdrvpage
+          bcs  pload_err
+          jsr  pload
+          bcc  +
+
+pload_err:
+          lda  ch_in
+          jsr  pclose
+          lda  ch_out
+          jsr  pclose
+          ldx  reloc_tab+22     ; txt_ploaderr
+          ldy  reloc_tab+23
+          jsr  print_console
+          rts
+
+        + sta  mid_child        ; remember MID
+          lda  #%01000000       ; open page-pipe for output
+          jsr  popen
+          stx  ch_out           ; remember channel
+          lda  #%10000000       ; open byte-pipe for input
+          jsr  popen
+          stx  ch_in            ; remember channel
+
+          lda  mid_child
+          tax
+          ldy  #0
+          jsr  setsup           ; set baseaddress
+          iny
+          lda  ch_out
+          jsr  setsup           ; set stdin-channel
+          iny
+          lda  ch_in
+          jsr  setsup           ; set stdout-channel
+          iny
+          jsr  setsup           ; set stderr-channel
+          lda  #0
+          ldy  #8
+          jsr  setsup           ; no parameter page
+
+          lda  #4
+          jsr  init_process
+          bcs  pload_err
+
+        - lda  $91
+          bpl  terminate       ; check for RUN/STOP
+          ldx  ch_in
+          jsr  pipe_chk
+          bcs  terminate
+          beq  +
+          ldx  ch_in
+          jsr  pgetc
+          jsr  put_console
+          jmp  -
+        + ldx  ch_out
+          jsr  pipe_chk
+          bcs  end_wait
+          bmi  -
+          ldy  buf_ptr
+          lda  com_buffer+2,y
+          beq  end_wait
+          inc  buf_ptr
+          ldx  ch_out
+          jsr  pputc
+          jmp  -
+
+end_wait: ldx  ch_out
+          jsr  pclose
+          lda  #0
+          sta  ch_out
+
+        - ldx  ch_in
+          jsr  pgetc
+          bcs  terminate
+          jsr  put_console
+          jmp  -
+
+terminate:
+          ldx  ch_in
+          jsr  pclose
+          ldx  ch_out
+          jsr  pclose
+          rts
+
+reloc_tab:
+          bit  init_file       ; +1
+          bit  txt_initrc      ; +4
+          bit  txt_ioerr       ; +7
+          bit  txt_rctoolong   ; +10
+          bit  txt_rcsyntax    ; +13
+          bit  shell_name      ; +16
+          bit  txt_pload0      ; +19
+          bit  txt_ploaderr    ; +22
+          bit  txt_up          ; +25
+          bit  txt_done        ; +28
+
+          .endofcode
+
+init_file: .asc ".initrc"
+init_file_length equ * - init_file
+
+txt_initrc:    .asc "reading \".init.rc\"\n\0"
+txt_ioerr:     .asc "i/o error\n\0"
+txt_rctoolong: .asc ".initrc is too long, not executed\n\0"
+txt_rcsyntax:  .asc ".initrc has wrong syntax\n\0"
+txt_pload0:    .asc "executing \"\0"
+txt_ploaderr:  .asc "load error or wrong format\0"
+txt_up:        .asc "init + screen manager version 1.2(beta)\n"
+               .asc "         by Poldi, Mar16 1997\n\n\0"
+txt_done:      .asc "done.\n\0"
+
+ch_out:  .byte 0
+ch_in:   .byte 0
+
+mid_child: .buf 1
+buf_ptr:   .buf 1
+
+shell_name:  .buf 16
+
+.newpage
+com_buffer: .buf 256
+
+.endofcode

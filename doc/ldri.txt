@@ -1,0 +1,34 @@
+How to add a driver
+===================
+
+A driver has the same format as a normal command.
+But the first thing a driver does is hooking into the driver-table
+of the system.
+search for a unused table-position :
+	ldy # 15
+     a: lda $C2A0,y
+	beq found
+	dey
+	bpl a
+	->error
+ found: lda # DriverChar (in ascii)
+	sta $C2A0,y
+	lda # DriverPage
+	sta $C2B0,y
+ (maybe i'll make a systemcall for this in a later LUnix version)
+
+The signal-pointer then have a special meaning
+ signal 1 :  PLoad-Pointer
+ signal 15:  called by the system when a process is killed
+	     (the driver has to close files /unlock used semaphores)
+ (the other singals aren't defined yet. They may be used in a later
+  version for things like 'open file' 'close file' 'get' 'print' ...usw)
+
+Next thing the driver does is declaring his code-memory to driver-used-
+memory (replace PID by #38 in the memory-pageowner table $C300)
+and commit suicide.
+(the driver-code will stay in memory ! and can be executed by all other
+processes using the singal-pointer..)
+
+(.... to be continued)
+

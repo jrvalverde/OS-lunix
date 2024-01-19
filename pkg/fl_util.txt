@@ -1,0 +1,4 @@
+"autolunix.c64" (1258 bytes)
+"fasthead.c64" (1101 bytes)
+"fasthead.doc" (1902 bytes)
+"autolunix.doc" (1516 bytes)

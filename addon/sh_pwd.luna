@@ -1,0 +1,19 @@
+; $VER: pwd 1.0
+; © by Stefan Haubenthal 1996
+; pwd(1) print working directory
+
+.header "pwd"
+
+cdn     equ     186; current device number
+
+_init:
+
+  lda     cdn
+  clc
+  adc     #"0"
+  jsr     $9069
+  lda     #"\n"
+  jmp     $9069
+  
+.endofcode
+

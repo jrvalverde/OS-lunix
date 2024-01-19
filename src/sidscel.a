@@ -1,0 +1,172 @@
+; SID-play sceleton
+
+.head "beepy"
+
+; how to allocate IRQ and all SID channels:
+
+irq_vec   equ  788
+lunix_irq equ  $9121
+stderr    equ  _base+2
+strout    equ  $905d
+suicide   equ  $901b
+
+sid_base  equ  54272
+
+_init:
+          sei
+
+          lda  $c268           ; system semaphore
+          and  #%00001110      ; pattern for SID1, SID2, SID3
+          bne  _sid_inuse
+          ora  #%00001110
+          sta  $c268           ; lock them
+
+          lda  #%00001110
+          sta  _base+4         ; also set local bits
+
+          lda  #<lunix_irq     ; check if IRQ-vector has its
+          cmp  irq_vec         ; original value
+          bne  _irq_inuse      ; if not, error ("irq in use")
+
+          lda  #>lunix_irq
+          cmp  irq_vec+1
+          bne  _irq_inuse
+
+          lda  _myirq+1        ; change IRQ-vector
+          sta  irq_vec
+
+          lda  _myirq+2
+          sta  irq_vec+1
+
+          lda  #$ff            ; tune is activated! (we need cleanup)
+          sta  _tune_on
+
+          cli
+
+          ; init SID
+
+          lda  #0
+          ldx  #24
+        - sta  sid_base,x
+          dex
+          bpl  -
+
+          lda  #15             ; give it all :)
+          sta  sid_base+24
+ 
+          lda  #240
+          sta  sid_base+6
+          sta  sid_base+7+6
+          sta  sid_base+14+6
+          lda  #17
+          sta  sid_base+4
+          sta  sid_base+7+4
+          sta  sid_base+14+4   ; switch all voices on
+
+          lda  #0
+          sta  _tune_count
+
+          ; block, and wait till its done
+          ; all the rest is done in the IRQ-routine!
+
+          lda  2               ; contains current IPID
+          ldx  #9
+          tay
+          sty  _tune_ipid      ; remember IPID of this process
+          jsr  $9009           ; block
+          jsr  $9012           ; break (force taskswitch)
+
+          ; here we are again !
+
+          jsr  _cleanup        ; stop it !
+
+          lda  #0
+          jmp  $9018           ; suicide (exitcode 0)
+
+_sid_inuse:
+          ldx  stderr          ; stderr channel
+          jsr  strout
+          bit  message1
+
+          lda  #1              ; exitcode not zero (error)
+          jmp  suicide         ; suicide with error
+
+_irq_inuse:
+          ldx  stderr          ; strerr channel
+          jsr  strout
+          bit  message2
+ 
+          lda  #1              ; exitcode not zero (error)
+          jmp  suicide         ; suicide with error
+
+_cleanup:
+          sei
+          bit  _tune_on
+          bpl  +               ; skip if tune is not active
+
+          lda  #<lunix_irq
+          sta  irq_vec
+          lda  #>lunix_irq
+          sta  irq_vec+1
+
+          lda  $c268           ; unlock semaphores
+          and  #%11110001      ; Doesn't work well, because of a
+          sta  $c268           ; kernel bug. Thats why i do it in
+          lda  #0              ; here!
+          sta  _base+4
+
+          cli
+
+          lda  #0              ; reset SID
+          ldx  #24
+        - sta  sid_base,x
+          dex
+          bpl  -
+
+        + rts
+
+_myirq:   bit  my_irq
+
+
+my_irq:   ; ...play tune...
+
+          lda  _tune_count     ; generate this UGLY beepy sound :-)
+          sta  sid_base+1
+          lsr  a
+          sta  sid_base+7+1
+          lsr  a
+          sta  sid_base+14+1
+          inc  _tune_count
+          bne  +               ; are we ready ?
+
+          ldx  #9              ; yes, then unblock process
+          ldy  _tune_ipid      ; (lets stop this noise!)
+          sei
+          stx  $c262
+          sty  $c263           ; pass WaitState of process to unblock
+          jsr  $901e           ; unblock
+
+        + jmp  lunix_irq       ; continue with LUnix-IRQ-routine
+
+
+.endofcode                     ; equal to .byte $02
+
+
+message1:
+          .asc "SID is busy\n\0"
+
+message2:
+          .asc "IRQ is busy\n\0"
+
+_tune_count:
+          .byte 0
+_tune_ipid:
+          .byte 0
+_tune_on:
+          .byte 0
+
+
+; IRQ seems to change its rate, when the system's load changes !
+; if you want to have it more accurate, i'd suggest using NMI
+; instead. (In that case the user has to call "a1541" before
+; starting your player).

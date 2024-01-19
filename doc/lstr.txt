@@ -1,0 +1,111 @@
+The LUnix application-structure :
+=================================
+
+     on disc :		  offset/memory	     in memory
+--------------------------------------------------------
+'executable'  : $FF $FF|	       |	--
+..for version : aa     |    0000       |   *) start-page
+    aa.bb	bb     |    0001       |   *) Std.In  (Pipe Nr.)
+lengh/pages	nn     |    0002       |   *) Std.Out (Pipe Nr.)
+unused		00     |    0003       |   *) Std.Err (Pipe Nr.)
+--------------------------------------------------------
+max-stack-size	nn     |    0004       |   *) 0	  \
+ZP-start	aa     |    0005       |   *) 1	   |
+ZP-size		nn     |    0006       |   *) 2	   | bitmap of 32 semaphores
+unused		00     |    0007       |   *) 3	  /   (PrzSemaphores)
+--------------------------------------------------------
+area of pointer	       | 0008 - 0037   |  16-pointer each 3byte (see below)
+ signal-catching       |	       |
+ routines	       |	       |
+CMD		       | 0038 - 003F   |  CMD-Name (8 chars zero terminated)
+--------------------------------------------------------
+code...		       | 0040...       |  code...
+
+Format of a signal-pointer:
+ first byte :  00 - NIL (vector is not defined or the process doesn't catch this signal)
+	       4C - Absolute branch
+	       2C - Relative branch (relative to offset 0000)
+ second,third byte : LO/HI byte of adress
+
+Note: the first pointer (offset 0008-000A or signal 0) has a special meaning:
+ it points (absolute adr. ! no matter with value the frist byte has) to the
+ initial/startup - routine of the process (this is only called once in the lifetime of
+ a process)
+
+ *) -> These bytes will be initialized by the system or the parentprocess
+
+Offset 0008 has a special meaning too :
+ it contains the hi-adr. of the parameter-page (of 00 if there are no parameters for
+ the process) (again initialized by the parentprocess)
+
+The semaphores : (#n - semaphore n)
+================
+
+  0.Byte : Bit7 (#0): IEC-Bus
+	   Bit6 (#1): Keyboard
+	   Bit5 (#2): Joystick 1 (Port 56320)
+	   Bit4 (#3): Joystick 2 (Port 56321)
+	   Bit3 (#4): SID-Voice 1
+	   Bit2 (#5): SID-Voice 2
+	   Bit1 (#6): SID-Voice 3
+	   Bit0 (#7):  unused maybe NMI ?
+  1.Byte : Bits0-7 (#15..#8): the sprites 0-7
+  2.Byte : Bits0-7 (#23..#16): Userportbits 0-7 (Port 56577/56579)
+  3.Byte : --undefined--
+
+Semaphores are needed to prevent more than one process to work with one
+ressource (eg. a sprite or the discdrive,printer)
+
+If a process wants to use eg. the printer, then it has to call the
+'lock'-routine of the kernal (for the printer or the discdrive you have to
+lock semaphore #7)
+The system will check if the certain semaphore is lock or not...
+ - if it is locked,then the process will be blocked till it is unlocked
+ - if it is unlocked, then the coresponding bit will be set (this will lock
+   the semaphore for other processes)
+
+Later the process has to unlock the semaphore it has locked
+(if a process is killed during action all the locked semaphores will be unlocked
+automaticaly)
+
+Note:
+ Do never lock more that one process like this :
+    lock #a
+    lock #b
+    ...
+ There may be the risc of a  'deadlock' situation...better do it like...
+    lock #a
+    - check if #b is free -> if not unlock #a and tryagain...
+    lock #b
+    ...
+
+
+Signals :
+=========
+  You can send signals to other processes using the 'sendsignal' routine of the kernel
+  ($904B)
+		    lda #IPID
+		    ldx #SignalNumber (1-15)
+		    jsr $904B
+
+  For the orther process it will look like a normal IRQ !
+  The processor will continue at the given adr. (signal-pointer!)
+
+Note:
+ This call is (normaly) only used by the system....
+ You shouldn't handle with IPIDs at all ! (only use PIDs if possible !)
+ If so,you have to disable the irq ! 'SE I' while working with IPIDs
+
+Table of used signals
+ signal 0  - Init
+ signal 6  - user break
+ signal 7  - 'killed parent process'
+ signal 8  - 'killed child process'
+ signal 9  - kill-sequence
+
+
+
+
+
+
+

@@ -1,0 +1,109 @@
+Documentation zu Netzwerk-Software unter LUnix:
+===============================================
+
+Was braucht man,um die Netzwerksotfware zu installieren ?
+ - mindestens einen C64/128 PAL oder NTSC (C128 im 64er modus)
+   (lustig wirds aber erst bei >1 Rechnern :)
+ - Falls man mehr als einen Rechner hat (sollte man eigentlich schon)
+   braucht man noch das KABEL (!).Zu verbinden sind insgesamt 6 Leitungen:
+    - GND (die Masse darf natyrlich auf keinen Fall fehlen und sollte wenn
+      moeglich zuerst verbunden werden..doch dazu spaeter)
+    - PB0,PB1,PB2,PB3  ,PB6  (am Userport)
+    diese Leitungen werden einfach 1:1 zusammengeschaltet
+    (bei mehr als 2 Rechnern auch ! Es koennen bis zu 6 Rechner zusammengeschaltet
+     werden,die Anzahl ist durch dir Art des Verbindungsaufbaus begrenzt)
+    - Wenn man nur eine Floppy fyr >1 Rechner hat, dann sollte man in einen
+      der Userport-Stecker einen Schalter einbauen, mit dem man eine der
+      benutzten Datenleitungen auf Masse ziehen kann (yber einen Widerstand
+      von etwa 470 Ohm-1 KOhm mehr dazu spaeter)
+ - Mindestens ein Floppy-Laufwerk sollte man schon haben
+ - Und LUnix_v0.1p2 + net.drv,rshserv,rsh(,netstat)
+     alles zu bekommen unter ftp 131.188.190.131  /pub/poldi/LUnix/...
+     (werds auf anfrage auch mal wieder in die News posten).
+
+Das Einschalten oder besser 'Hochfahren' der Rechner :
+ - Alle Netzstecker ziehen !
+ - Das Verbindungskabel (wenn moeglich immer zuerst GND) an alle Rechner
+   anstecken.
+ - falls man nur eine Floppy hat sollte man diese auch an GND anklemmen, denn
+   die must spaeter 'wandern gehn'.
+ - Jetzt kann man unbesorgt die Netzstecker einstecken und die Rechner+Floppys
+   anschalten (Wichtig ! Alle vernetzten Rechner einschalten sonst koennen
+   keinerlei Ubertragungen stattfinden)
+ - Jetzt nacheinander oder gleichzeitig (ganz egal) auf jedem der Rechner
+   LUnix installieren, mindestens eine Session starten,und ...
+	Ja ich vergass :zuerst mus man jedem der Rechner eine Nummer geben
+	(zwischen 1 und 6 incl.) und zwar so,dass KEINE der Nummern doppelt
+	benutzt ist.
+	Dann in der Shell folgendes eingaben :
+	net.drv x
+	 (wobei x die angesprochene,eindeutige	Nummer des Rechners ist)
+	rshserv -v &
+	 (das -v kann man auch weglassen)
+
+   Das Netzwerk ist jetzt aktiv...nach 2-4min. sollte der Bus in Ruhe sein,vorher
+   versuchen die Rechner noch wie wild zu ermitteln, welche Zielrechner existieren.
+   Diese Zeit braucht man aber nicht abzuwarten, man kann gleich loslegen.
+
+   Mit rsh x
+   kann man sich in jeden beliebien (auch denselben {deshalb reicht zur Not auch nur
+   ein Rechner :) }) Rechner 'einloggen'.
+
+>> Hat man nur eine Floppy muss man allerdings folgendes beachten :
+   An den Rechner,in dem man 'rsh' eintippt muss natyrlich eine Floppy angeschlossen
+   sein,jedoch sollte der Zielrechner AUCH eine Floppy haben, den dieser wird sofort
+   im Anschluss versuchen eine Shell zu starten (deren Standertein und -ausgabe ins
+   Netz 'umgebogen' wird).Dies geht normal so schnell..also zumindest viel schneller
+   als man die Floppy umstecken koennte! Deshalb der oben angesprochene HALT-Schalter
+   an einem der Userpost-Stecker.
+   1.Schalter auf HALT (d.h. eine der Leitungen auf Masse)
+     Floppy an Rechner A und 'rsh b' eintippen (b= ID des Zielrechners = Rechner B)
+   2.Floppy an Rechner B und Schalter wieder oeffnen...und ab geht die Post :)
+
+Ein kleines Zusatzprograemmchen hab ich noch :
+  'netstat'
+  Gibt aus, welche Rechner 'online' sind, und wie die Verbindungsqualitaet zu jedem
+  dieser Rechner ist (genauer die mittlere Anzahl Fehlversuche,die zum Verschicken
+  eines Datenpacketes notwendig sind)
+  Sowie die Anzahl der Packete im Puffer,die noch an jeden dieser Rechner zu verschicken
+  sind.
+  Die Anzahl der eingegangenen Requests (=Shell-Anforderungen),die noch unbearbeitet
+  sind.
+  Die Anzahl freier Puffer...und die Gesamtzahl der gesendetet bzw. empfangenen
+  Datenpackete!
+
+
+Hier ein kleiner Bericht :
+==========================
+
+Ich hab die Software getestet mit Hilfe von :
+  1 C64 PAL    (im folgenden als Rechner A bezeichnet)
+  1 C64 NTSC   (Rechner B)
+  1 1541 Floppy
+  ca.20Meter 9poliges Kabel...
+
+Auf beiden Rechnern LUnix_v0.1p2 + Netzsoftware...
+Habe Rechner B als 'Server' benutzt d.h.
+auf rechner A : 2x rsh nach rechner B und von dort wieder zuryck nach A :)
+auf rechner B : 2x rsh nach rechner A
+und dann kraeftig Ausgabe erzeugt...
+  4x prim 10,600 oder so aehnlich...
+hat super funktioniert...hab dann auch noch jede menge andere Sachen probiert
+hat alles toll geklappt !
+Bis...naja irgendwie hab ich auf einem der Rechner eine
+Deadlock-Situation herbeigefyhrt wie das weiss ich auch nicht.
+Naja auf jeden fall hat rechner B keine Packete mehr angenommen..nach 2.5min
+wurde die Verbindung als 'gestorben' erklaert aber immerhin yber 10000 Packete
+wurden bis zu diesem Zeitpunkt fehlerfrei ausgetauscht :)
+
+Also wenn mir jemand herausfindet, durch welche Kombination von Befehlen man das
+Netz schrotten kann oder das System zu unsinnigen Ausgaben bringen kann.
+Dann soll er mir das unbedingt mailen !
+Ich bin yber jeden 'bugreport' dankbar.
+
+
+
+ciao Daniel
+
+>Keep on running little C64<
+

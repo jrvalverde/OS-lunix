@@ -1,0 +1,247 @@
+
+
+
+FLICKTTY : 80 COLUMNS VIC SCREEN DRIVER FOR LUNIX
+-------------------------------------------------
+
+
+   Usage: sh0.exe ! flicktty [-0..7]
+
+
+   Using 80 columns with a C64 has many difficulties. Since we have the 
+VIC resolution of 320x200, we are limited to 4 pixels wide characters
+to be shown in the 80 columns text screen. This difficulty still exists 
+with the 'flicktty' but not the memory and speed disadvantages, which
+conventional 80-columns drivers has.
+   Current implementation of 'flicktty' for lunix has the throughput of
+5250 characters per second. This speed is practical characteristic speed.
+It is measured and calculated concerning the bad raster lines and smooth
+scroll (one line up per one scroll). Using a rather optimized tricks can
+make it possible to go up to 8000 cps theoretically. This would make the
+connections at 57600bps flawless.
+   VIC memory requirement of 'flicktty' is only 3328 bytes. Two kilobytes
+are used to hold partial screen data, and one kilobytes hold the font
+definitions. One page of memory is for the sprites. Only one sprite is
+used for the moment, which is the cursor. But the driver routine eats
+seven pages of system memory, I was so lazy that I didn't deallocate the
+initialization routines, which are take approximately two pages.
+   The idea behind the 'flicktty' is simple: Illusion. A raster interrupt
+routine switches and shifts the text screen memories at each screen
+refresh. This make two half screens to complement each other by using a 
+feature of our brains and CRTs. If your CRT has slow phosphorus and if
+you have chose low contrast and intense color with proper color patterns.
+Your brain cannot sense the flickker. Here the colors make important
+contributions to this illusion. Our eyes have mainly two groups of sensors.
+One group senses only the brightness and brain use these sensors for
+shape detection. Other group gives the color information, and they are
+not as fast as the brightness sensors, especially if you are lack of
+vitamin A. 
+   Technique of 'flicktty' is simple either. For the LUnix implementation
+I used $a300-$afff area. With defining the first screen as the one at the
+$a400-$a7e7 and the second screen at $ac00-$afe7. I initalized the screens
+by using these instructions:
+
+lda$dd00
+and#$fe
+sta$dd00 ; selection of $8000-$bfff for VIC display
+lda#$10
+sta$d011 ; 24 rows
+lda#$9a
+sta$d018 ; screen 1
+lda#$c8
+sta$d016 ; no shift
+
+And at each raster interrupt I used these instructions to swap the screens:
+
+lda$d018
+eor#$20
+sta$d018 ; display other screen
+lda$d016
+eor#$04
+sta$d016 ; shift 4 pixels right or left
+
+Now, together with the font, the idea is capable of showing 80 columns
+wide screen. The font consists of 128 character definitions. Characters
+are defined only in the most significant nybles (left four bits of a 
+byte).
+
+  To write something on the screen we interleave the text properly. For
+example, printing 'hello world' has this representation:
+
+odd numbered characters go to the first screen:
+
+$a400 : 08 0c 0f 17 12 04 20 20 : hllwrd  
+
+and even numbered ones go to the second screen:
+
+$ac00 : 05 0c 20 0f 0c 20 20 20 : el ol   
+
+ Then at each 1/50 seconds one of the screens is displayed with proper
+shifting:
+
+
+       ------------------
+1/50 : Ih l l w r d     I  
+       I                I
+       I                I
+       ------------------ 
+
+       ------------------
+2/50 : I e l   o l      I  
+       I                I
+       I                I
+       ------------------ 
+.
+.....and so on,
+
+
+ 
+  Of course this swapping cause a flicker on the screen which is somehow
+annoying. But it can be reduced by several ways:
+
+1. Mount a quality screen filter to your monitor.
+2. Keep the contrast adjust of your monitor as low as possible.
+3. Keep the color intensity as high as possible.
+4. Adjust the brightness inbetween low and middle.
+5. Choose proper colors (you have only 8 choices with 'flicktty')
+6. Wear sunglasses (in that case increase the contrast adjust)
+7. Take no more vitamin A ;-)
+
+
+
+   As for the usage and implementation of 'flicktty', I can say that it
+is simple and limited. It's simple because it only directs its input 
+to the screen. For example, these usages are possible:
+
+sh0.exe ! flicktty
+
+cat <unix-text-file> ! unix2cbm ! flicktty
+
+ed ! flicktty
+
+   The implementation is limited because the screen driver mimics only the
+tty device. That is, no movement up or down, no color changes, and no more
+reverse characters. 
+   But it has some special character codes to refresh the color ram.
+For instance pressing control-1 refreshs it. 
+   Upon exit (which is the situation of no input) it recovers the old
+screen.
+   Current implementation for LUnix has also other drawbacks. For example
+there are screen flushes when there is a access to disk-drive. Also if
+an application has long atomic processes, it also cause flushes. The
+scroller within the 'flicktty' has also a long atomic area. which reduces
+the multitasking a little bit. But this is not a big problem because it
+can scroll 95 lines in a second. And finally it gives you only 24 rows
+of text. Also note that when you scroll long texts you cannot follow it.
+This is caused from the idea, not the code. You simple see the unscrolled
+part for the 1/50th of a second. 
+   Most of these drawbacks can be avoided for later releases of LUnix.
+They are caused from the resource conflicts, therefore they are easy to
+be corrected. But as for the last one, simply there is no solution for it.
+Actually there is one similar to FLI routine, but eats 63% of CPU time.
+
+   For the color patterns you only have 8 different selections. You can
+select one of them like this:
+
+sh0.exe ! flicktty -3
+
+instead of 3 you can enter a number 0 to 7, default is 0.
+
+the numbers has these color patterns:
+
+     number  font color      background color
+     ------- --------------- ----------------
+        0    yellow          light-blue
+        1    light-green     light-blue
+        2    yellow          purple
+        3    light-green     purple
+        4    yellow          green
+        5    light-blue      blue
+        6    green           blue
+        7    cyan            blue
+
+Note that border color same as the background color. Furthermore, the font
+colors are not the same as I give above, they are mixed colors caused by
+the flickering. 
+
+
+   In conclusion it can be said that the use of 'flicktty' is the only
+viable solution to 80 columns problem, for limited memory and slow C64
+machines.
+
+
+Ilker Ficicilar
+filker@newton.physics.metu.edu.tr
+
+
+-----------end of the flicktty documentation------------
+
+------------cut here for the uuencoded flicktty LUnix command---------
+
+begin 644 flicktty
+M__\  0L 'QD% "Q                                             
+M                 $9,24-+5%19J1 @49 @J!6P%*X"$"!=D"R &JG_3!B0
+MK0 6K0 4K0@0\#6%&J  A!G(L1G)+= AR+$9R5#0!ZGJC443T/+),) /R3BP
+M"Z@@AQ6E&B SD) 'J0"-41#PLJT@T(WV%:TAT(WW%2  $:U:$*J@!)T Q.B(
+MT/FM6A 8:02%&7BE&2 SD%C&&:49S5H0L/ @@A0@%!.N 1 @*I!8L L@ Q&E
+M'(W_%4S2$" "%2"<%"#<%*G(C1;0H@<@0I"I $P8D   3!413"023!T33 02
+M3-P23#'J3.81>*D"C0/=K0'=2"G]C0'=H "M6A"%&H09A!NIJ(4<I0%(*?Z%
+M :($L1F1&\C0^>8:YAS*T/)HJ D#A0%HC0'=F$BM -TI_8T W:D7C1'0J<B-
+M%M"IFHT8T" )$:D A1RM% .-$!&M%0.-$1&M?Q&-%0.I#(T4 ZD@C1+0J0&-
+M&M @$A&@/ZD F<"CB!#ZJ?"-U:.ICXW_IXW_KZT7T"E_C1?0K1W0*7^-'="M
+M'- I?XT<T*T;T F C1O0J0>-+M"M%= )@(T5T&B% 2!;%5A@  "M]!6-(-"-
+M(="@^JWU%9G_UYGYV)GSV9GMVHC0\6"@^JD@F?^KF?^CF?FLF?FDF?.MF?.E
+MF>VNF>VFB-#E8(4=F$BE'<F3T D@"1&I (4<\&O)G= (QAP08^8<\%_)'= ,
+MYARE',E0D%/&'+!/R0W0"2 &$:D A1SP0LD4\$/)() ZR4"0&LE@L 3I/[ 2
+MR8"P!.D?L K)P)!6R>"P'NE_2*4<2JAHL 69F*>0!0D F9BOYARE',E0D *P
+MM6BHI1U@I1SP]\8<2JAXI0%(*?Z% ;F9IYF8I[F9KYF8K\C )Y#O:(4!6*D@
+MF<"GF<"OT,P@$A$8D,:M&= I = #3 \1I0%("0.% >X9T*T8T$D@C1C0J>Z-
+M#]"M_Q4*:0P*C0[0K1#0L ,I?RP)@$R4%: Q(-453,(4ZJDRS1+0D/NM$=!)
+M!XT1T"D'T!6@)ZD@F<"GF<"OB!#W3'$5ZNKJZNIXH">E 4@I_H4!N5"DF0"D
+MN5"LF0"LN7BDF2BDN7BLF2BLN:"DF5"DN:"LF5"LN<BDF7BDN<BLF7BLN?"D
+MF:"DN?"LF:"LN1BEF<BDN1BMF<BLN4"EF?"DN4"MF?"LN6BEF1BEN6BMF1BM
+MN9"EF4"EN9"MF4"MN;BEF6BEN;BMF6BMN>"EF9"EN>"MF9"MN0BFF;BEN0BN
+MF;BMN3"FF>"EN3"NF>"MN5BFF0BFN5BNF0BNN8"FF3"FN8"NF3"NN:BFF5BF
+MN:BNF5BNN="FF8"FN="NF8"NN?BFF:BFN?BNF:BNN2"GF="FN2"OF="NN4BG
+MF?BFN4BOF?BNN7"GF2"GN7"OF2"ON9BGF4BGN9BOF4BON<"GF7"GN<"OF7"O
+MB# #3$\3:(4!6* GJ2"9F*>9F*^($/=,6Q7JC9828'BM*@.-\!6M*P.-\16M
+M71"-*P.IJXTJ UA@>*WP%8TJ ZWQ%8TK UA@I9G0 TP^\:DBS1+0L/NI\,T2
+MT)#RL.UXK20#C?(5K24#C?,5K5T0C24#J>N-) -88'BM\A6-) .M\Q6-)0-8
+M8*69T -,5_&I(LT2T+#[J;#-$M"0\K#M>*4!2 D'A0&M -T) XT W:D7C1C0
+MH/JI#Z($F?_7F?G8F?/9F>W:B-#QK1 1C10#K1$1C14#J0"-&M"M%= I?XT5
+MT*D;C1'0:(4!K?85C2#0K?<5C2'06&"@F(R/$HR6$HR[$HS!$LB,N!*,OA)@
+MH,",CQ*,EA*,NQ*,P1+(C+@2C+X28+FP%8WT%;FX%8WU%6"-$-"M%M!)!(T6
+MT&B% 6BH:*IH0*DXA1EXHA^] ,#)(+ &RA#V.%A@O0#"S6 0\/*%&J 'L1G9
+M.!#0YX@0]AA88+F@&B #$8@0]V  #@X$! 4&!@,'#0<-!PX%!P     &!0  
+M          ! H*"@@(!@    P"#@H.  @(# H*"@P    &" @(!@ " @8*"@
+MH&    ! H." 8  @0$#@0$!     0*"@8"! @(# H*"@H   0 ! 0$!    @
+M " @(*! @("@H,"@H # 0$! 0$#@    H.#@H*    # H*"@H    $"@H*! 
+M    P*"@P("   !@H*!@("   ,"@@("     X(#@(.   $#@0$! 0    *"@
+MH*#@    H*"@H$    "@H.#@H    *"@0*"@    H*!@("#   #@($" X !@
+M0$! 0$!@ $"@@," @.  8" @(" @8  @<" @(" @(  @0/! (           
+M  ! 0$! 0 !  *"@         *#@H."@  ! X(#@(.!  * @0$! @*  0*"@
+M0*"@8! @($       "! @(" 0"  @$ @("! @   H$#@0*      0.!     
+M      !@($    #@             $  $! @8$" @ ! H*"@H*!  $# 0$! 
+M0.  0* @0(" X #@($ @(*!  *"@X" @("  X(#@(""@8 ! H(# H*!  . @
+M($! @(  0*"@0*"@0 ! H*!@($"     0   0     !   ! 0( 0($" 0" 0
+M    X #@    @$ @$"! @ ! H"! 0 !      /      0*"@X*"@H # H*# 
+MH*#  $"@@(" H$  P*"@H*"@P #@@(#@@(#@ ." @." @(  0*" H*"@0 "@
+MH*#@H*"@ .! 0$! 0.  X" @(""@0 "@H*# H*"@ (" @(" @.  H.#@H*"@
+MH # H*"@H*"@ ."@H*"@H.  P*"@P(" @ ! H*"@H*! (,"@H,"@H*  8(" 
+M0" @P #@0$! 0$!  *"@H*"@H.  H*"@H*"@0 "@H*"@X."@ *"@0$! H*  
+MH*"@0$! 0 #@($! 0(#@ " @(/ @(" @0(! @$" 0( @(" @(" @(%"@4*!0
+MH%"@()! ()! ()           ,# P,# P,#      /#P\/#P            
+M      #P@(" @(" @("@4*!0H%"@4! 0$! 0$! 0     *!0H%! D"! D"! 
+MD# P,# P,# P(" @," @("      ,# P," @(#          X" @("      
+M  #P\    # @(" @(" @\         #P(" @(" @(. @(" @@(" @(" @(# 
+MP,# P,# P# P,# P,# P\/        #P\/              \/#P " @(*!@
+M(       P,# P# P,#      (" @X     # P,#      ,# P, P,# P#49,
+M24-+5%19("T@.# @0T],54U.4R!$4DE615(@1D]2(-;)PPT-0ED@R4Q+15(@
+MQDE#24-)3$%2(" Z(,U!4D-((#$Y.3<-#55304=%.B!32# N15A%("$@1DQ)
+M0TM45%D@6RTP+BXW72 -                          !!3%)%0419($E.
+M4U1!3$Q%1 T                   T@4D%,24-)0TG&(%)%2TS)(%E"(%)%
+I5DE21"!214M#24Q&+</)UB!33DU53$]#(# X                  !"
+ 
+end
+
+--------end of uuencoded flicktty--------------

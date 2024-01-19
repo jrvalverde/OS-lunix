@@ -1,0 +1,119 @@
+Die Lunix - System-Routinen
+===========================
+
+$9000 - Create process-run-table
+$9003 - Declare process		 < A=StackPage,X/Y=StartAdr	> A=IPID
+$9006 - Send interupt		 < A=IPID,X/Y=I-Adr		> c=Error
+$9009 - Block process		 < A=IPID,X/Y=WaitState		> c=Error
+$900C -
+$900F - Unblock process		 < X=IPID			> c=Error
+$9012 - Break
+$9015 * Kill process		 < X=IPID,A=ExitCode  (FF=ex.nicht,FE=Killed with error)
+$9018 * Suicide			 < A=ExitCode
+$901B * Suicide with error
+$901E - Unblock process		 < $C262/3=WaitState,A wrid ybergeben
+$9021 - Open Pipe		 < A=[7]0Byte/1Page[6]0Inp/1Outp > X=#Ch
+$9024 - Join Pipe		 < A=[7]0Inp/1Outp,X=#Ch       > c=Error
+$9027 - Close Pipe		 < X=#Ch		       > c=Error
+$902A - PipeInp			 < X=#Ch > A=Byte,c=Error (A:00=EOF,FF=Err)
+$902D - PipeOutp		 < X=#Ch,A=Byte		       > c=Error
+$9030 - MemAlloc		 < X=Occ.Code,A=numb.of Pages  > A=MID,c=Error
+$9033 - MemFree			 < A=MID		       > c=Error
+$9036 - PageAlloc		 < X=Occ.Code		       > A=MID,c=Error
+$9039 - LessMemBlock
+$903C * GetExitCode		 < A=IPID		       > c=Error
+$903F * Lock (Pass Semaphore)	 < X=#Nr		       > c=Error
+$9042 * Unlock			 < X=#Nr		       > c=Error
+$9045 * Initiate process	 < A=Priority,X=SuperPage      > A/Y=PID,c=Error
+$9048 * SetSupByte		 < A=Byte,X=Page,Y=Offset
+$904B * Send Signal		 < A=IPID,X=#SigNr	       > c=Error
+$904E * Get DriverPage		 < X/Y=Filename		       > A=DrvPage,X/Y=Name' c=Error
+$9051 * Mover			 < A=Org.adr. (Hi)	       > A=last code
+...
+$905D * bas.StringOut		 < X=#Ch followed by bit<adr   > c=Error
+$9060 * GetIPID			 < A/Y=IPID		       > X=IPID,c=Error
+$9063 * PLoad			 < A=DrvPage,X/Y=Name'	       > A=MID,c=Error
+$9066 * Get (from StdIn)				       > A=Byte,c=Error
+$9069 * Put (to StdOut)		 < A=Byte		       > c=Error
+$906C * Put (to StdErr)		 < A=Byte		       > c=Error
+$906F * StdInChk					       > z=Empty,c=Error
+$9072 * MemAllocate		 < A=Number of pages	       > A=MID
+$9075 * MemFree			 < A=MID		       > c=Error
+
+
+
+ * - important routines for the user
+
+    (For more details see lunix.routines)
+
+System-Tables
+===============
+
+$C000 - $C01F : Bit 0..3 (dec0-15) process priority
+		Bit 5	 1->Stopped process (because of Error)
+		Bit 6	 1->Process is blocked (Waiting for event)
+		Bit 7	 1->Process is running
+$C020 - $C03F : Stack max-size
+$C040 - $C05F : Stack size
+$C060 - $C07F : ZeroPage start adr.
+$C080 - $C09F : ZeroPage size
+$C0A0 - $C0BF : Stack+ZP - Page
+$C0C0 - $C0DF : WaitState 1.Byte
+$C0E0 - $C0FF : WaitState 2.Byte
+		  00 00 - no WaitState
+		  01 xx - Wait for 'not full' pipe #Ch
+		  02 xx - Wait for 'not empty' pipe #Ch
+		  03 00 - Wait for free pipe
+		  04 00 - Wait for free memorypage
+		  05 00 - Wait for free process
+		  06 00 - Wait for signal
+		  07 xx - Wait for process exitcode IPID
+		  08 xx - Wait for unlock #Nr
+		  09 00 - Prozess is growing
+$C100 - $C11F : Duration (0..15)
+$C120 - $C12F : next IPID
+$C140 - $C15F : Time LSB
+$C160 - $C17F : Time
+$C180 - $C19F : Time MSB
+$C1A0 - $C1BF : PID  LSB
+$C1C0 - $C1DF : PID  MSB
+$C1E0 - $C1FF : IPPID (Internal Parent Process IDentification)
+$C200 - $C21F : SuperPage (Pointer)
+$C220 - $C23F : Memory bitmap (one bit for each Page)		'1'=free Page
+$C240 - $C25F : Pipe   bitmap (one bit for each possible Pipe)	'1'=free Pipe
+$C260	      : PID (LSB) Counter
+$C261	      : PID (MSB) Counter
+$C262..4      : buffer
+$C265	      : Pipe descriptor pointer	       (starting with $FF)
+$C266	      : Pipe descriptor pointer (LSB)  (starting with $00)
+$C267	      : SystState
+		  Bit 3	   LessMemory
+$C268..B      : Lock/Unlock bitmap  (SystemSemaphores)	#Num	'1'=locked
+		  Byte 0,Bit 7 : IEC - Bus		#0
+			 Bit 6 : Keyboard		#1
+			 Bit 5 : Joystick Port 0	#2
+			 Bit 4 : Joystick Port 1	#3
+			 Bit 3 : SID voice1		#4
+			 Bit 2 : SID voice2		#5
+			 Bit 1 : SID voice3		#6
+			 Bit 0 : VIC screen (viewer)	#7
+		  Byte 1       : VIC-sprites 0..7	#8..#15
+		  Byte 2       : Userport bits 0..7	#16..#23
+		  Byte 3       without function yet
+$C280 - $C29F : Pipe descriptor tab.
+$C2A0 - $C2AF : Driver-Chars	    ($00 = not in use)
+$C2B0 - $C2BF : Driver-Pages
+$C300 - $C3FF : Memory - Pageowner+Flags
+		  Bits 0..5 Owner
+			    dec.0-31 IPIDs
+			    dec.  32 Kernel
+			    dec.  34 Pipe descriptor
+			    dec.  35 Pipe contents
+			    dec.  37 Process Stack
+			    dec.  38 Driver
+		  Bit	6   MoveBit (not implemented yet)
+		  Bit	7   FreeBit
+$C400 - $C4FF : Memory MIDs
+$C500 - $C5FF : Pipe hash pointer LSB
+$C600 - $C6FF : Pipe hash pointer MSB
+

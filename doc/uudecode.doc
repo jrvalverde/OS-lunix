@@ -1,0 +1,48 @@
+uudecode
+========
+
+ compatible with GNU's sharutils v4.2 (uudecode for UNIX...)
+
+ decodes standard-uu and base64 encoded binarys.
+
+
+example:
+--------
+
+  LUnix: cat testbin.uue,p! uudecode ! tee test
+
+  UNIX:  uudecode testbin.uue
+         mv <uudecode-output-file> test
+
+begin 644 uudecode
+M__\``08`R-D``!Q``````````````````````$QB$@``````````````````
+M`````````````````%551$5#3T1%J1`@49!,AA*B`"!FD+`=R03P&<D*\!?)
+M#?`3G?P4Z.!DT.>N`Q`@79`L^1,X8.``\-BI`)W\%!A@..D@*3]@K@,0(%V0
+M+"@4.&`@2!"P\*(!CO84K?P4('D0C?04T`-,(A&N]A2]_!0@>1`*"HWU%+W]
+M%"!Y$(WW%$I*2DH-]10@:9"M]!3)`I`_K?<4"@H*"HWU%*[V%+W^%"!Y$(WW
+M%$I*#?44(&F0K?04R0.0&JWW%$IJ:BG`C?44KO84O?\4('D0#?44(&F0&*WV
+M%&D$C?84.*WT%.D#C?04,`+0@TR*$"!($+`<K?P4R670%:W]%,ENT`ZM_A3)
+M9-`'K?\4T`(88*X#$"!=D"P(%#A@K@,0(%V0+"@4.&`@2!"P\*D`C?84H@.I
+M/=W\%-`%RA#X&&`L^Q00"ZX#$"!=D"QR%#A@KO84O?P4\-"\_!2Y^1(I0/`(
+MF/`%Z,D]T.Z8\+NY^1*-^!3HO/P4N?D2*4#P$YCP!>C)/=#NK@,0(%V0+#04
+M.&"Y^1*-^13HO/P4N?D2R7_0!NB8T/+PWL`]T!Z.]A2M^!0*"HWU%*WY%$I*
+M2DH-]13.^Q0@:9!,61&Y^1*-^A3HO/P4N?D2R7_0!9C0\_"FCO84K?@4"@J-
+M]12M^11*2DI*#?44(&F0K?D4"@H*"HWU%*WZ%$I*#?44(&F0KO84O/P4P#W0
+M!L[[%$Q9$:WZ%$IJ:BG`[O84&?D2(&F03($1K@,0(%V0+%P43!N0K@,0(%V0
+M+)@43!N0K@,0(%V0+!<43!N0K0@0T..-^Q2-]Q0@2!"PY*(%O?P4W4D4T$/*
+M$/6B!KW\%/#<Z,D@T/:.]12N`Q`@79`L0A2N]12]_!3)(9`+K@,0("V0[O44
+MT.NI#:X#$"`MD"SW%#`#3(H03%D1H@R]_!3=3Q30F<H0]<[W%*(-3*42`G]_
+M?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W\^?W]_
+M/S0U-C<X.3H[/#U_?W]`?W]_``$"`P0%!@<("0H+#`T.#Q`1$A,4%187&!E_
+M?W]_?W\:&QP='A\@(2(C)"4F)R@I*BLL+2XO,#$R,W]_?W]_?W]_?W]_?W]_
+M?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]_
+M?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]_
+M?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]_?W]L24Y%(%1/3R!,3TY'#0!N
+M3R`G14Y$)R!,24Y%#0!N3R`G0D5'24XG($Q)3D4-`'-(3U)4($9)3$4-`&E,
+M3$5'04P@3$E.10T`9D]53D0@`&)E9VEN(&)E9VEN+6)A<V4V-"!5541%0T]$
+M12!)3E1%4E)54%1%1`T`1$%402!&3TQ,3U=)3D<@)STG(%!!1$1)3D<@0TA!
+M4D%#5$52#0!U4T%'13H@555$14-/1$4-("!D14-/1$4@02!&24Q%($-214%4
+M140@5TE42"!5545.0T]$12X-("!I3E!55"!)4R!35$1)3BP@3U544%54($E3
+*(%-41$]55"X-````
+`
+end

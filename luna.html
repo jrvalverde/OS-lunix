@@ -1,0 +1,173 @@
+<!DOCTYPE HTML PUBLIC "-//AdvaSoft//DTD HTML 2 extended 960415//EN">
+<HTML>
+<HEAD>
+ <TITLE>LUnix-Assembler V1.23</TITLE>
+</HEAD>
+
+<BODY>
+<center><H1>LUnix-Assembler (<EM>luna</EM>)</H1></center>
+<CENTER><H2>version: Nov 23 1997</H2></CENTER>
+<H3>Many people would like to write some code for the little C64/128 but don't have
+the equipment to do so. So i decided to write a small (and therefore very portable)
+assembler in a subset of ansi-C. This assembler compiles without modifications
+on every (GNU-) C-compiler. </H3>
+<H3>Additional this assembler is optimized to generate LUnix-applications. This is
+done by including a LUnix-binary-header-generator. This is why all new LUnix-applications will be in
+luna-format. Also the next version of the LUnix-kernel will be in this format (4400 lines yet! :-) </H3>
+<H3>The <A HREF="src/luna.c">sourcecode</A> is around 1800 lines of C.</H3>
+
+<P>
+<H3>If you have compiled luna on an other system, especially systems that come without
+a c-compiler, please email me the executable, to include it here.</H3>
+
+<P>
+<H2>How to use luna:</H2>
+<H3>Luna just assembles a source (text) file into a destination (binary) file which
+is executable on a C64/128. There is no editor included! The inputfile may be 
+written with every text-editor that saves files in plain ascii-format.</H3>
+
+<P>
+<H3>There is also a <A HREF="doc/luna.doc">ascii-documentation file</A></H3>
+ 
+<P>
+<H3>Source-format: (look into the ascii documentation for more)</H3>
+<UL>
+  <LI>Comments are seperated by a leading ";"
+  <LI>Label definitions look like
+  <UL>
+    <LI>&lt;label&gt;:
+    <LI>&lt;label&gt; equ &lt;expression&gt;
+  </UL>
+  <LI>Expressions look like
+  <UL>
+    <LI>&lt;value&gt;[{+,-,&lt;,&gt;,&amp;,|}&lt;value&gt;]*
+    <LI>with &lt;value&gt;={[#]decimal,$hex,%bin,&lt;label&gt;,"&lt;char&gt;",*}
+  </UL>
+  Expressions may be preceeded by "&lt;" to select the lower byte, or "&gt;" to 
+  select the higher byte of a 16bit-expression.
+  <LI>Special assembler-commands
+  <UL>
+    <LI>.byte &lt;expression&gt;[,&lt;expression&gt;]*
+    <LI>.word &lt;expression&gt;[,&lt;expression&gt;]*
+    <LI>.longword &lt;expression&gt;[,&lt;expression&gt;]*
+    <LI>.asc "string\n\0" 
+    <LI>.head "cmd-name" [&lt;ZP-label&gt;[,&lt;ZP-label&gt;]*] - insert LUnix-header and switch to <STRONG>LUnix-mode</STRONG>
+    <LI>.org &lt;expression&gt; -  sets start address
+    <LI>.buf &lt;expression&gt; - insert #n (empty) bytes
+    <LI>.code - enter code-area (only in <STRONG>LUnix-mode</STRONG>)
+    <LI>.data - enter data-area (only in <STRONG>LUnix-mode</STRONG>)
+    <LI>.endofcode - no more code (enter data-area, only in <STRONG>LUnix-mode</STRONG>)
+    <LI>.newpage - align to start of (next) page
+    <LI>.global - declare a label global, a list of all globals and their value will be saved after compilation.
+  </UL>
+  <LI>Special labels (only used in <STRONG>LUnix-mode</STRONG>)
+  <UL>
+    <LI>_base - Startaddress of codesegment
+    <LI>_init - Must point to init-routine
+    <LI>_cleanup - Can point to a cleanup-routine (called by kill)
+    <LI>_sig.killedparent - Can point to a handler
+    <LI>_sig.killedchild - Can point to a handler
+    <LI>_sig.userbreak - Can point to a handler
+  </UL>
+  <LI>Shortrange labels can be defined by a leading "+" for 
+    forward or "-" for backward references (leading a assembler command). So "jmp +"
+    will jump to the next "+"-reference and "jmp -" to the latest "-"-reference.
+    The same way "jmp ++" will jump to the second next "+"-marker and so on.
+</UL>
+
+<P>
+<H2>A simple example</H2>
+<H3>The classic example is the "Hello World"-program, so this is my first example
+for luna also.</H3>
+<H2>This is the sourcecode located in a file named "hello.a" :</H2>
+<HR>
+<PRE>
+  ; This is a simple "hello world" program
+  ; for LUnix
+
+  .header "hello"                ; "hello" is the name that will be displayed
+                                 ; by "ps" in LUnix
+
+          strout equ $905d       ; value of the 2 used system-vectors
+          bye    equ $9018
+          stdout equ _base+2     ; _base is startadress of codesegment
+                                 ; and will be initialized by the assembler.
+
+  _init:  ldx  stdout            ; load standard output-stream-ID
+          jsr  strout            ; call "string output"
+          bit  text_hello        ; pass text-pointer to strout 
+
+          lda  #0                ; exitcode 0 (no error)
+          jmp  bye               ; end program
+
+          .endofcode             ; end of code
+
+  text_hello:
+          .asc "Hello, world!\n\0"
+</PRE>
+<HR>
+
+<H2>Running the assembler by typing "luna hello.a hello"
+will produce this output:</H2>
+<HR>
+
+<listing>
+> luna hello.a hello
+  Pass 1
+  Pass 2
+  Final pass
+   note: ignored unused system vector "_sig.userbreak"
+   note: ignored unused system vector "_sig.killedparent"
+   note: ignored unused system vector "_sig.killedchild"
+   note: ignored unused system vector "_cleanup"
+  done, 6 labels, 41 bytes labelspace, 102 bytes of code
+> _
+</listing>
+<HR>
+
+<H2>This is the code generated by luna (in file "hello"):</H2>
+<H3>The lines marked with "*" are generated automatically by luna, they realize
+the header that Lunix needs to load and run a program. </H3>
+<HR>
+
+<listing>
+*        FF FF (Pseodo-Startaddress for load)
+*$1000)  00 01 01 00 C8 D9 00 00 1C 40 00 00 00 00 00 00 ;....HY...@......
+*$1010)  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ;................
+*$1020)  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ;................
+*$1030)  00 00 00 00 00 00 00 00 68 65 6C 6C 6F 00 00 00 ;........HELLO...
+
+*$1040)  LDA #$10
+*$1042)  JSR $9051
+*$1045)  JMP $1048
+
+($1048)  LDX $1002
+($104B)  JSR $905D
+($104E)  BIT $1057
+($1051)  LDA #$00
+($1053)  JMP $9018
+
+($1056)  02 (end of code)
+
+($1057)  68 45 4C 4C 4F 2C 20 57 4F 52 4C 44 21 0D 00    ;Hello, world!.
+</listing>
+<HR>
+
+<H2>The program "hello" can now be started by the LUnix-shell by just typing
+"hello":</H2>
+
+<HR>
+
+<listing>
+@> hello
+Hello, world!
+@> _
+
+</listing>
+<HR>
+<H3>If you have suggestions or comments contact me by email <A HREF="mailto:Daniel.Dallmann@studbox.uni-stuttgart.de">Daniel.Dallmann@studbox.uni-stuttgart.de</A></H3>
+
+<HR>
+<H3><A HREF="http://wwwcip.rus.uni-stuttgart.de/~etk10217/c64.html#contents">BACK</A> to the main-C64-page (in germany)</H3>
+</BODY>
+</HTML>

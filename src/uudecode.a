@@ -1,0 +1,532 @@
+; uudecode for LUnix 0.1
+
+; compatible with GNU shareutils 4.2  (uudecode for UNIX)
+;  uu and base64 decoding !
+
+.head "uudecode"
+
+#include "kernel.inc"
+#define  line_len_max 100
+
+#undef debug           ; hexout routine is only available, if compiled
+                       ; with  "#define debug"
+
+read_line:
+          ldx  #0
+        - jsr  getc
+          bcs  +
+          cmp  #4
+          beq  +
+          cmp  #10
+          beq  ++
+          cmp  #13
+          beq  ++
+          sta  line,x
+          inx
+          cpx  #line_len_max
+          bne  -
+          ldx  stderr_ch
+          jsr  strout
+          bit  line_too_long
+        + sec
+          rts
+
+        + cpx  #0
+          beq  -
+          lda  #0
+          sta  line,x
+          clc
+          rts
+
+
+dec_char:
+          sec
+          sbc  #$20
+          and  #$3f
+          rts
+
+        - ldx  stderr_ch
+          jsr  strout
+          bit  short_file
+          sec
+          rts
+
+;
+; uu-decoding
+;
+
+read_uu:
+          jsr  read_line
+          bcs  -
+
+          ldx  #1
+          stx  tmp2
+          lda  line
+          jsr  dec_char
+          sta  n
+          bne  +
+
+          jmp  uu_end
+
+          ; n is >= 1 !
+
+      + - ldx  tmp2
+          lda  line,x
+          jsr  dec_char
+          asl  a
+          asl  a
+          sta  tmp
+
+          lda  line+1,x
+          jsr  dec_char
+          sta  hlp
+          lsr  a
+          lsr  a
+          lsr  a
+          lsr  a
+          ora  tmp
+          jsr  putc
+
+          lda  n
+          cmp  #2
+          bcc  +               ; skip if n<2
+          lda  hlp
+          asl  a
+          asl  a
+          asl  a
+          asl  a
+          sta  tmp
+          ldx  tmp2
+          lda  line+2,x
+          jsr  dec_char
+          sta  hlp
+          lsr  a
+          lsr  a
+          ora  tmp
+          jsr  putc
+
+          lda  n
+          cmp  #3
+          bcc  +               ; skip if n<3
+          lda  hlp
+          lsr  a
+          ror  a
+          ror  a
+          and  #$c0
+          sta  tmp
+          ldx  tmp2
+          lda  line+3,x
+          jsr  dec_char
+          ora  tmp
+          jsr  putc
+
+        + clc
+          lda  tmp2
+          adc  #4
+          sta  tmp2
+          sec
+          lda  n
+          sbc  #3
+          sta  n
+          bmi  +
+          bne  -
+
+        + jmp  read_uu
+
+ uu_end:  jsr  read_line
+          bcs  +
+          lda  line
+          cmp  #101
+          bne  +
+          lda  line+1
+          cmp  #110
+          bne  +
+          lda  line+2
+          cmp  #100
+          bne  +
+          lda  line+3
+          bne  +
+          clc
+          rts
+
+        + ldx  stderr_ch
+          jsr  strout
+          bit  missing_end
+          sec
+          rts
+
+;
+; base64 decoding
+;
+
+        - ldx  stderr_ch
+          jsr  strout
+          bit  short_file
+          sec
+          rts
+
+read_base64:
+          jsr  read_line
+          bcs  -
+
+          lda  #0
+          sta  tmp2
+          ldx  #3
+          lda  #"="
+
+        - cmp  line,x
+          bne  +
+          dex
+          bpl  -
+
+          clc
+          rts
+
+        + bit  last_data
+          bpl  rd_b64
+
+          ldx  stderr_ch
+          jsr  strout
+          bit  base64_error
+          sec
+          rts
+
+ rd_b64:  ldx  tmp2
+          lda  line,x
+          beq  read_base64
+
+        - ldy  line,x
+          lda  base64tab,y
+          and  #$40
+          beq  +
+
+          tya
+          beq  +
+          inx
+          cmp  #"="
+          bne  -
+
+        + tya
+          beq  read_base64
+
+          lda  base64tab,y
+          sta  c1
+          inx
+
+        - ldy  line,x
+          lda  base64tab,y
+          and  #$40
+          beq  +
+
+          tya
+          beq  b64_illline
+          inx
+          cmp  #"="
+          bne  -
+
+b64_illline:
+          ldx  stderr_ch
+          jsr  strout
+          bit  illegal_line
+          sec
+          rts
+
+        + lda  base64tab,y
+          sta  c2
+          inx
+          
+        - ldy  line,x
+          lda  base64tab,y
+          cmp  #$7f
+          bne  +
+
+          inx
+          tya
+          bne  -
+          beq  b64_illline
+
+        + cpy  #"="
+          bne  +
+
+          stx  tmp2
+          lda  c1
+          asl  a
+          asl  a
+          sta  tmp
+          lda  c2
+          lsr  a
+          lsr  a
+          lsr  a
+          lsr  a
+          ora  tmp
+          dec  last_data
+          jsr  putc
+          jmp  read_base64
+
+        + lda  base64tab,y
+          sta  c3
+          inx
+          
+        - ldy  line,x
+          lda  base64tab,y
+          cmp  #$7f
+          bne  +
+
+          tya
+          bne  -
+          beq  b64_illline
+
+        + stx  tmp2
+          lda  c1
+          asl  a
+          asl  a
+          sta  tmp
+          lda  c2
+          lsr  a
+          lsr  a
+          lsr  a
+          lsr  a
+          ora  tmp
+          jsr  putc
+          lda  c2
+          asl  a
+          asl  a
+          asl  a
+          asl  a
+          sta  tmp
+          lda  c3
+          lsr  a
+          lsr  a
+          ora  tmp
+          jsr  putc
+          ldx  tmp2
+          ldy  line,x
+          cpy  #"="
+          bne  +
+
+          dec  last_data
+          jmp  read_base64
+
+        + lda  c3
+          lsr  a
+          ror  a
+          ror  a
+          and  #$c0
+          inc  tmp2
+          ora  base64tab,y
+          jsr  putc
+          jmp  rd_b64
+          
+;
+; ********************************************
+;
+
+_sig.userbreak:
+          ldx  stderr_ch
+          jsr  strout
+          bit  interrupted_txt
+
+          jmp  panic
+
+how_to:
+          ldx  stderr_ch
+          jsr  strout
+          bit  how_to_txt
+          jmp  panic
+
+        - ldx  stderr_ch
+          jsr  strout
+          bit  missing_begin
+          jmp  panic
+
+_init:    
+          
+decode:   lda  _base+8
+          bne  how_to
+
+          sta  last_data
+          sta  hlp
+          jsr  read_line
+          bcs  -
+
+          ldx  #5
+
+        - lda  line,x
+          cmp  begin_txt,x
+          bne  _chk_next
+          dex
+          bpl  -
+
+          ; found "begin " (uu-encoded) !
+
+          ldx  #6
+
+_begfound:
+        - lda  line,x
+          beq  decode
+          inx
+          cmp  #$20            ; scan for " "
+          bne  -
+
+          stx  tmp             ; print found <name>
+          ldx  stderr_ch
+          jsr  strout
+          bit  found_txt
+
+        - ldx  tmp
+          lda  line,x
+          cmp  #$21
+          bcc  +
+          ldx  stderr_ch
+          jsr  pputc
+          inc  tmp
+          bne  -
+
+        + lda  #"\n"
+          ldx  stderr_ch
+          jsr  pputc
+          bit  hlp
+          bmi  +
+
+          jmp  read_uu
+
+        + jmp  read_base64
+
+ _chk_next:
+          ldx  #12
+
+        - lda  line,x
+          cmp  begin64_txt,x
+          bne  decode
+          dex
+          bpl  -
+
+          ; found "begin-base64 "
+
+          dec  hlp
+          ldx  #13
+          jmp  _begfound
+
+;
+; misc stuff
+;
+
+#ifdef debug
+
+hexout:
+          pha
+          lsr  a
+          lsr  a
+          lsr  a
+          lsr  a
+          tax
+          lda  hex_tab,x
+          ldx  stderr_ch
+          jsr  pputc
+          pla
+          and  #$0f
+          tax
+          lda  hex_tab,x
+          ldx  stderr_ch
+          jsr  pputc
+          lda  #32
+          ldx  stderr_ch
+          jmp  pputc
+
+          .endofcode
+
+hex_tab:  .asc "0123456789abcdef"
+
+_debug_readline:
+          .asc "read line...\n\0"
+
+#else
+          .endofcode
+
+#endif
+
+          ;base 64 table
+
+base64tab:
+          .byte $7f, $7f, $7f, $7f, $7f, $7f, $7f, $7f ; 00-07
+          .byte $7f, $7f, $7f, $7f, $7f, $7f, $7f, $7f ; 08-0f
+          .byte $7f, $7f, $7f, $7f, $7f, $7f, $7f, $7f ; 10-17
+          .byte $7f, $7f, $7f, $7f, $7f, $7f, $7f, $7f ; 18-1f
+          .byte $7f, $7f, $7f, $7f, $7f, $7f, $7f, $7f ; 20-27
+          .byte $7f, $7f, $7f, $3e, $7f, $7f, $7f, $3f ; 28-2f
+          .byte $34, $35, $36, $37, $38, $39, $3a, $3b ; 30-37
+          .byte $3c, $3d, $7f, $7f, $7f, $40, $7f, $7f ; 38-3f
+          .byte $7f, $00, $01, $02, $03, $04, $05, $06 ; 40-47
+          .byte $07, $08, $09, $0a, $0b, $0c, $0d, $0e ; 48-4f
+          .byte $0f, $10, $11, $12, $13, $14, $15, $16 ; 50-57
+          .byte $17, $18, $19, $7f, $7f, $7f, $7f, $7f ; 58-5f
+          .byte $7f, $1a, $1b, $1c, $1d, $1e, $1f, $20 ; 60-67
+          .byte $21, $22, $23, $24, $25, $26, $27, $28 ; 68-6f
+          .byte $29, $2a, $2b, $2c, $2d, $2e, $2f, $30 ; 70-77
+          .byte $31, $32, $33, $7f, $7f, $7f, $7f, $7f ; 78-7f
+          .byte $7f, $7f, $7f, $7f, $7f, $7f, $7f, $7f ; 80-87
+          .byte $7f, $7f, $7f, $7f, $7f, $7f, $7f, $7f ; 88-8f
+          .byte $7f, $7f, $7f, $7f, $7f, $7f, $7f, $7f ; 90-97
+          .byte $7f, $7f, $7f, $7f, $7f, $7f, $7f, $7f ; 98-9f
+          .byte $7f, $7f, $7f, $7f, $7f, $7f, $7f, $7f ; a0-a7
+          .byte $7f, $7f, $7f, $7f, $7f, $7f, $7f, $7f ; a8-af
+          .byte $7f, $7f, $7f, $7f, $7f, $7f, $7f, $7f ; b0-b7
+          .byte $7f, $7f, $7f, $7f, $7f, $7f, $7f, $7f ; b8-bf
+          .byte $7f, $7f, $7f, $7f, $7f, $7f, $7f, $7f ; c0-c7
+          .byte $7f, $7f, $7f, $7f, $7f, $7f, $7f, $7f ; c8-cf
+          .byte $7f, $7f, $7f, $7f, $7f, $7f, $7f, $7f ; d0-d7
+          .byte $7f, $7f, $7f, $7f, $7f, $7f, $7f, $7f ; d8-df
+          .byte $7f, $7f, $7f, $7f, $7f, $7f, $7f, $7f ; e0-e7
+          .byte $7f, $7f, $7f, $7f, $7f, $7f, $7f, $7f ; e8-ef
+          .byte $7f, $7f, $7f, $7f, $7f, $7f, $7f, $7f ; f0-f7
+          .byte $7f, $7f, $7f, $7f, $7f, $7f, $7f, $7f ; f8-ff
+
+line_too_long:
+          .asc "Line too long\n\0"
+
+missing_end:
+          .asc "No 'end' line\n\0"
+
+missing_begin:
+          .asc "No 'begin' line\n\0"
+
+short_file:
+          .asc "Short file\n\0"
+
+illegal_line:
+          .asc "Illegal line\n\0"
+
+found_txt:
+          .asc "Found \0"
+
+begin_txt:
+          .byte $62, $65, $67, $69, $6e, $20
+
+begin64_txt:
+          .byte $62, $65, $67, $69, $6e
+          .byte $2d, $62, $61, $73, $65
+          .byte $36, $34, $20
+
+interrupted_txt:
+          .asc "uudecode interrupted\n\0"
+
+base64_error:
+          .asc "data following '=' padding character\n\0"
+
+how_to_txt:
+          .asc "Usage: uudecode\n"
+          .asc "  Decode a file created with uuencode.\n"
+          .asc "  Input is stdin, output is stdout.\n\0"
+
+n:        .buf 1  ; number of bytes per line
+tmp:      .buf 1
+tmp2:     .buf 1
+hlp:      .buf 1
+
+c1:       .buf 1 ; 3 * char for bas64 decoding
+c2:       .buf 1
+c3:       .buf 1 
+
+last_data: .buf 1
+
+line:     .buf line_len_max ; linebuffer

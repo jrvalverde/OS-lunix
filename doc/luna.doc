@@ -1,0 +1,279 @@
+LUna documentation.
+
+Original by Daniel Dallmann
+Ammended by Paul Gardner-Stephen (gardners@ist.flinders.edu.au) 19 May '97
+
+New in this version:
+	.text directive
+	.line directive
+	Automatic pre-processing by lupo (-p to disable)
+	Much nicer error messages (emacs can now understand them and goes to
+	  the correct line everytime - even in includes!  Also, full file
+	  pedigree is shown (eg in file foo, included from bar, included from 
+	  quux.....).
+	Some bug fixes (see luna.c comments at start for these!)
+
+
+
+Special assembler directives (LUnix-mode)
+-----------------------------------------
+
+ .header
+
+ Creates a header that tells the LUnix-OS which zeropage
+ bytes are use by the programm, and how much memory has to
+ be allocated for it. The header also includes the name of
+ the programm. (The name will be displayed by some shell-
+ commands eg. ps or top)
+
+ .header "gugu" 
+
+ Will create a header, that give your programm the name
+ "gugu" and no zeropage bytes.
+
+ .header "gugu2", byte1, byte2, .word1
+
+ Will create a header, that allocates 4 zeropage bytes for
+ your programm ("byte1","byte2","word1" and "word1+1").
+ 
+ The header-directive must be the first one of your
+ assembler programm, because it triggers the assembler
+ switching to LUnix-mode.
+ The ammount of memory needn't be specified, because
+ the assembler knows it from assembling your code.
+
+ The header also contains a little initialization strap,
+ that relocates your code at runtime, this piece of code
+ must know where to jump to after relocating.
+ There must be a label called "_init" somewhere in your
+ code, where the LUnix-system jumps to after the relocation.
+ To leave your programm you can either use a "rts" or you 
+ can jump to the "suicide"-systemcall.
+ 
+ Optional you can define some other labels:
+
+  _cleanup
+    LUnix will jump to, if your process is going to 
+    be killed. This can be used to do some cleanup
+    on I/O-registers or notification of other
+    processes. (Return with "rts" !)
+
+  _sig_killedparent
+    If the parent process has been killed, the LUnix 
+    system sends a signal to your programm. If you've
+    defined this label it does a (software emulated)
+    interrupt (of your programm) and jumps to the labels
+    address. Note, that you have to be sure not to change
+    the value of the CPU-registers nor the statusflags.
+    (just like you know it from IRQ-routines with the old
+    C64-kernel).
+
+      _sig_killedparent:
+        pha
+        txa
+        pha
+        tya
+        pha
+
+        ...    
+
+        pla
+        tay
+        pla
+        tax
+        pla
+        rti
+
+  _sig_killedchild
+    Same as above but signal is only sent, if at least one of
+    your programms child processes have been killed.
+
+  _sig_userbreak
+    Again, a signal, but only sent, if a "user break": This
+    is usually the user pressing RUN/STOP.
+
+ _sig.pload
+    This signal is if you are writing a driver!
+
+ _sig.procdied (or similar)
+    This signal is again for if you are making a driver!
+
+ Undefined labels of this kind, make your programm just
+ ignore the related system-signals. (Which means, that they
+ are simply not sent at all).
+
+ The label "_base" is initialized by the assembler iself. It
+ points to the (virtuall) startaddress of the generated code.
+ You'll need this address to have access to your own header.
+
+   Eg. (_base+0) = highbyte of new base-address (after relocation)
+       (_base+1) = streamID of stdin-channel
+       (_base+2) = streamID of stdout-channel
+       (_base+3) = streamID of sdterr-channel
+       (_base+8) = highbyte of parameter-page (or $00 if the is none)
+
+       (_base+56)...(_base+63) = programm-name (zero terminated)
+
+ .data
+
+ To make your code relocatable, there must be a why for the
+ assembler to know what things need to be relocated and what
+ not. The data-directive tells the assembler, that there is
+ unrelocatable stuff following. (eg. a table or some strings)
+
+ 
+ .code
+
+ Is used to switch back to relocatable stuff. Note, that wrong
+ use of these two directives can cause system-crashes.
+
+  An example for .data and .code:
+
+    ...
+    rts
+
+    .data
+
+   string1: .ascii "Hello\n"
+   string2: .ascii "And goodbye\n"
+   mul3table:
+            .byte 0,3,6,9,12,15,18
+    .code
+    
+   misc:
+    lda #007
+    sta james_bond 
+    ...
+    
+  You might run into trouble, if you use code like this:
+
+    ( insert ".data" here! )
+   ugly:
+    lda #0
+    .byte $2c
+    lda #$12
+    .byte $2c
+    lda #$23
+    ( insert "code" here! )
+    ...
+
+  because the relocator will read it as:
+
+    lda #0
+    bit $12a9
+    bit $23a9
+    ...
+
+    and if your code covers the memory page $12 or $23 (which you 
+    can not know), the relocator tryies to relocate the
+    argument of the bit-instruction !
+    So you have to insert a ".data" before "ugly:" and a ".code" after
+    the last "lda" ! Don't insert ".data" after the label definition
+    "ugly:" because the data-directive will be realized by inserting
+    two bytes of additional information into the generated code.
+
+
+ .endofcode
+
+ Switches to data-mode for the rest of source-file. (The relocator
+ of LUnix quits, if he reaches this point)
+ (Each LUnix-mode source file MUST contain this directive!)
+
+.line
+
+This should only be inserted by lupo (not you!) It is so that luna can 
+track the lines where errors happen (even after pre-processing!).
+LUna now calls lupo automatically! (just like gcc :)
+(Paul Gardner-Stephen)
+
+.text 
+
+This is kind of like .ascii.  I didnt know .ascii was there, and besides,
+i like .text better!  It can have both strings and expressions, eg:
+.text "floss",46,"moo",0
+(expressions come out as bytes!).  Also, it doenst do \ escapes yet..
+but i have already coded too much this weekend!
+(Paul Gardner-Stephen)
+
+How to read commandline parameters
+----------------------------------
+
+ Maybe you want to write a little programm, and you like to make it
+ configuable by commandline arguments. For example, the user should be
+ able to set some flags (in this example the flags a,d,l and m).
+
+  gugu [-adlm]
+
+ You would solve this with a piece of code like the following:
+
+   readflags:
+   
+     flag_a equ %00000001
+     flag_d equ %00000010
+     flag_l equ %00000100
+     flag_m equ %00001000
+
+     ldy  #0
+     sty  flags             ; clear all flags
+
+     lda  _base+8
+     beq  no_args           ; skip if there are no arguments
+   
+     sta  hlp+1
+     sty  hlp               ; hlp (a zeropage word) now points to
+                            ; parameter-page
+     iny
+     lda  (hlp),y
+     beq  no_args           ; skip if end of parameter-text
+     cmp  #"-"
+     bne  error
+
+   - iny
+     beq  error
+     lda  (hlp),y           ; get char after "-"
+     beq  error
+     cmp  #"a"
+     beq  found_a
+     cmp  #"d"
+     beq  found_d
+     cmp  #"l"
+     beq  found_l
+     cmp  #"m"
+     beq  found_m
+     cmp  #"-"
+     beq  -
+   
+  error:
+     sec                    ; set carry (means error)
+     rts                    ; and return
+
+     .data
+
+     flags: .buf 1
+
+  found_a:
+     lda  #flag_a
+     .byte $2c
+  found_d:
+     lda  #flag_d
+     .byte $2c
+  found_l:
+     lda  #flag_l
+     .byte $2c
+  found_m:
+     lda  #flag_m
+   
+     .code
+
+     ora  flags             ; set flag-bit
+     sta  flags
+     jmp  -
+
+  no_args:
+
+     clc                    ; clear carry (no error)
+     lda  flags             ; load pattern into akku
+     rts                    ; and return
+
+ Afterwards flags contains a bit pattern that shows what flags
+ were present.

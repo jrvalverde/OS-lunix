@@ -1,0 +1,198 @@
+LUnix V0.1 - Library
+--------------------
+
+ First steps toward a LUnix library.
+
+ Library overview:
+ 
+  o print_hex8
+
+      Print 8 bit value (hexadecimal) to standard output.
+      < A=value
+      > - (A,X,Y changed)
+
+  o print_udec16
+
+      Print 16 bit unsigned value (decimal) to standard output.
+      < A/Y=value, X=padding character
+      > A=field length (X,Y changed)
+
+      The leading "0"s of the decimal will be replaced by the
+      padding character. If you choose $00 for the padding character the
+      leading "0"s will be stripped. (A returns the number of printed
+      characters).
+
+  o read_comitem
+
+      Read one item from the commandline argument list.
+      < -
+      > c=0: A=$00: X=character (Option)
+        c=0: A=$FF: X=offset to (_zpbase) pointing to a zero terminated
+                      string (argument)
+
+      The first 2 zeropage bytes (you have allocated in the header
+      statement) are used by read_comitem to read the argument list.
+      (_zpbase is the start of the allocated zeropage area, this is
+      hardcoded into luna).
+      Take a look into the testcode for more details (test/test.s).
+
+  o getenv
+
+      Get value of an environment variable.
+      < (_zpbase)=pointer to zero terminated string of format "variable"
+      > c=0: (_zpbase) points to value of the variable (zero terminated string)
+        c=1: no such variable in environment
+
+  o setenv
+
+      Set or change value of an environment variable.
+      < (_zpbase)=pointer to zero terminated string of format "variable=value"
+      > c=0: ok
+        c=1: error (not enough space in environment page)
+
+  o unsetenv
+
+      Remove variable from environment.
+      < (_zpbase)=pointer to zero terminated string fo format "variable"
+      > - (the value of _zpbase might change!!)
+      
+  o div_u16by8
+
+      Divide a 2byte unsigned number by a 1byte unsigned number.
+      < _zpbase/_zpbase+1, _zpbase+2
+      > X/Y=result, A=residue.
+
+      _zpbase, _zpbase+1 will be changed.
+
+  o libc_malloc
+  
+      libc-like memory management on top of the malloc/free LUnix system calls.
+      < A/Y=number of bytes to allocate
+      > A/Y=pointer to the allocated memory (or $0000 if the request fails)
+      4 bytes beginning with _zpbase of the zeropage will be changed !
+
+      In spite of the fact, that the C64's hardware can't detect segmentation
+      faults, they can be detected in some cases. (libc_malloc and free performs
+      some kind of sanity check, to detect segmentation faults)
+      The overhead of allocating chunks of memory is at least 4 bytes (but can
+      be as much as 259 bytes in the worst case. For example allocating 256
+      bytes with libc_malloc is extremely inefficient)
+      
+  o libc_free
+
+      Free memory allocated with libc_malloc.
+      < A/Y=pointer to allocated memory
+      4 bytes beginning with _zpbase of the zeropage will be changed !
+      
+      The pointer passed to libc_free must have been returned by a previous
+      call to libc_malloc.
+      
+   o sreadline
+
+      Read a line from standard input (a simple kind of line editing is 
+      possible)
+      < _zpbase/_zpbase+1 = pointer to buffer
+        Y = size of buffer in bytes (up to 255 bytes)
+      > c=0: Y = number of read bytes (pointer is unchanged)
+        c=1: A=$00: EOF (ctrl+d at beginning of line)
+             A=$FF: I/O error
+             
+      sreadline returns a zero terminated string.
+
+   o rrnd
+   
+      generate a (true, not simulated) random integer (0...255).
+      using timer 1 of CIA $dc00, current raster line, voice 3 of SID.
+      > A=random integer
+      
+      for better results you can switch on voice 3 with noise at the
+      highest possible frequency. (rrnd only takes 34 clock ticks)
+               
+requirements:
+=============
+
+ you need: luna >= version 1.19
+           lupo >= version 0.14
+           lld  >= version 0.05
+
+  the shellscript "makelib.sh" compiles the library from the sources and
+  will also built the test-executables in the test/ subdirectory.
+  (the *.c64 files in bin64/ are executable under LUnix)
+
+lib6502 standard library
+========================
+
+Source: lib6502 Version 0.3 (08 july 1997)
+         (c) A.Fachat
+
+Look at the file lib6502.html for details.
+(the current version can be obtained from his WWW page
+http://www.tu-chemnitz.de/~fachat/ )
+
+Currently implemented parts of the 6502 standard library:
+(you must include <lib6502.h>)
+
+  fgetc
+  fputc
+  fread
+  fwrite
+  malloc
+  mfree
+  term
+  kill
+  getpid
+  semgetnamed
+  psem
+  vsem
+
+Optional parts of the 6502 standard library, that are not (jet) 
+implemented:
+
+  flock
+  fcntl
+  fgetattr
+  fsetattr
+  connect
+  listen
+  accept
+  forkthread
+  semget
+  semfre
+  signal
+  send
+  received
+
+Totally missing parts:
+
+  fopen
+  fclose
+  fseek
+  pipe
+  fcmd
+  stddup
+  dup
+  fopendir
+  freaddir
+  fgetattr
+  fsetattr
+  chdir
+  exec
+  forkto
+  sendsignal
+
+Notes:
+  The library will use (modify) the 4 very first allocated zeropage bytes.
+  (You should declare two 16 bit zeropage variables in the header directive
+  of luna:
+    .header "name", .lib1, .lib2, ... )
+
+  There are predefined macros to load the standard file numbers into X:
+   ldx_stdin
+   ldx_stdout
+   ldx_stderr
+  instead of
+   ldx  #STDIN
+   jsr  fgetc
+  you should write
+   ldx_stdin
+   jsr  fgetc

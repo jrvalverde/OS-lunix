@@ -1,0 +1,134 @@
+Here is the source code for a sample fullscreen application.
+(at the end of this file you'll find the uuencoded executable)
+
+----------------------cut here--------------------------------
+
+; Sceleton for a fullscreen application
+;
+; (you'll need init.exe v1.2 or higher !)
+;
+
+#include "kernel.inc"
+
+#define  char_map    $0400
+#define  color_map   $d800
+#define  bg_color    $d020
+#define  fg_color    $d021
+
+.head "fullscr"  , .ptr
+
+_sig.userbreak:
+          ; reset screen (don't needed here because we haven't changed
+          ; that much.
+          lda  #$00
+          jmp  suicide
+
+_cleanup:
+          ldx  #1
+          jsr  unlock
+          ldx  #7
+          jmp  unlock          ; included because of kernel bug.
+
+_init:
+          ; before we can take over control of the screen, we have to
+          ; lock the related semaphores (no.1 = keyboard, no.7 = screen)
+
+          ldx  stdout_ch       ; print a little message
+          jsr  strout
+          bit  txt_go
+
+          ldx  #1
+          jsr  lock
+          ldx  #7
+          jsr  lock            ; lock keyboard and screen
+
+refresh:
+          lda  #14             ; change border color
+          sta  bg_color
+          lda  #6
+          sta  fg_color
+
+          ldy  #0
+          sty  ptr
+          lda  #>char_map
+          sta  ptr+1
+          ldx  #4
+          lda  #"."            ; fill the screen with dots
+
+        - sta  (ptr),y
+          iny
+          bne  -
+          inc  ptr+1
+          dex
+          bne  -
+
+          ldx  #4
+          lda  #>color_map
+          sta  ptr+1
+          lda  #0              ; black color
+          
+        - sta  (ptr),y
+          iny
+          bne  -
+          inc  ptr+1
+          dex
+          bne  -
+
+          ldx  #words_length
+
+        - lda  txt_words-1,x
+          sta  char_map+447,x
+          lda  #7
+          sta  color_map+447,x
+          dex
+          bne  -
+
+          ; now wait for F8 - Key
+
+        - inc  color_map+539
+          jsr  break           ; force rescheduling (task switch)
+          ldx  198
+          beq  -
+          sei
+          jsr  $e5b4           ; get character code from buffer
+          cmp  #140            ; compare with F8
+          beq  +
+          sta  char_map+539    ; for debugging
+          jmp  -
+
+        + ; F8 has been pressed, so temporary free screen and keyboard
+          ; (init does also backups the whole screen here)
+
+          ldx  #1
+          jsr  unlock
+          ldx  #7
+          jsr  unlock
+          jsr  break           ; give other processes a chance to get
+                               ; the screen
+          ldx  #1
+          jsr  lock
+          ldx  #7
+          jsr  lock            ; ok, screen is ours again :-)
+          jmp  refresh
+
+.endofcode
+
+txt_go:   .asc "This is a full screen application\n"
+          .asc "Press F8 to step through them.\n\0"
+
+txt_words: .asc "press f8 to switch back"
+words_length equ *-txt_words
+
+
+
+
+begin 644 fullscr
+M__\``0(`QMD"`!Q``````````````````````$Q($````````$Q-$```````
+M`````````````````$953$Q30U(`J1`@49!,5Q"I`$P8D*(!($*0H@=,0I"N
+M`A`@79`LWQ"B`2`_D*('(#^0J0Z-(-"I!HTAT*``A-FI!(7:H@2I+I'9R-#[
+MYMK*T/:B!*G8A=JI`)'9R-#[YMK*T/:B%[T@$9V_!:D'G;_9RM#R[AO:(!*0
+MIL;P]G@@M.7)C/`&C1L&3*P0H@$@0I"B!R!"D"`2D*(!(#^0H@<@/Y!,:A`"
+M=$A)4R!)4R!!($953$P@4T-2145.($%04$Q)0T%424].#7!215-3(&8X(%1/
+L(%-415`@5$A23U5'2"!42$5-+@T`4%)%4U,@1C@@5$\@4U=)5$-(($)!0TL`
+`
+end

@@ -1,0 +1,97 @@
+Welcome to the world of LUnix
+ This machine is a Commodore64
+
+Login:Guest
+
+Lets try to get a shell for you...
+@> ps
+PID   TIME  CMD
+38    0     ps
+37    0     sh0
+@> ps -?
+Usage - ps {-la}
+  -l print in long format
+  -a prints all processes
+@> ps -l
+PID   PPID  TIME  WCHAN MEM CMD
+40    37    0     r08   004 ps
+37    3     0     r02   005 sh0
+@> ps -la
+PID   PPID  TIME  WCHAN MEM CMD
+0     0     717   r02   007 console
+41    37    0     r08   004 ps
+37    3     0     r02   005 sh0
+3     1     781   r08   008 term9600
+1     0     13    b02F9 005 sh0
+@> top
+PID    CMD      PRI   CPU-TIME
+3      term9600 4     91    %
+42     top      4     3     %
+0      console  1     3     %
+37     sh0      1     3     %
+1      sh0      1     0     %
+
+@> top -?
+Usage - top
+  monitors the system activity
+  press <space> to restart
+  any other key to exit
+@> write -?
+Usage- write {-q} <pid>
+  <pid> process ID of the users shell
+  -q    quiet mode: no local echo
+@> write 1
+Hello ??
+@> Message from 1
+Hey, shut up !!!
+{EOF}
+
+@> ps -la ! wc
+Chars:200 Words:16 Lines:6
+@> prim -?
+Usage- prim start,num
+ start in decimals (longinteger)
+ num in decimals (0..65535 )
+@> prim 123,11
+127
+131
+137
+139
+149
+151
+157
+163
+167
+173
+179
+@> prim 123,1000 ! wc &
+@> ps -l
+PID   PPID  TIME  WCHAN MEM CMD
+53    37    0     r08   004 ps
+52    37    0     r08   002 wc
+51    37    3     r08   004 prim
+37    3     1     r02   005 sh0
+@> top
+PID    CMD      PRI   CPU-TIME
+51     prim     4     47    %
+3      term9600 4     47    %
+54     top      4     2     %
+0      console  1     1     %
+37     sh0      1     1     %
+52     wc       4     1     %
+1      sh0      1     0     %
+
+@> exit
+you have running jobs
+@> ps
+PID   TIME  CMD
+55    0     ps
+52    0     wc
+51    25    prim
+37    2     sh0
+@> kill 51
+Chars:1897 Words:0 Lines:407
+@> exit
+
+Connection closed.
+Press <enter> to reconnect.

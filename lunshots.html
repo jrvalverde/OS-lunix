@@ -1,0 +1,57 @@
+<!DOCTYPE HTML PUBLIC "-//AdvaSoft//DTD HTML 2 extended 960415//EN">
+<HTML>
+<HEAD>
+ <TITLE>LUnix-Screenshots (Version 0.1P3)</TITLE>
+</HEAD>
+
+<BODY>
+<CENTER><H2>How does LUnix look like</H2></CENTER>
+<HR>
+Look at the pictures below. I changed the C64-colors a bit to make the
+text more readable.
+<HR>
+Start LUnix by loading the File named "loader"
+<P>
+<CENTER><IMG SRC="lunshot1.gif" ALT="[PIC: C64 after RESET and loading &quot;loader&quot; ]"></CENTER>
+<BR>
+After the initialization of LUnix it shows a splitted screen without any prompt
+
+<P>
+
+<CENTER><IMG SRC="lunshot2.gif" ALT="[PIC: LUnix after startup (empty splitted screen) ]"></CENTER>
+<BR>
+Press Funktionkey F3 (add session) and you'll get a prompt, then press F1 (next session)
+this will highlight the promt. Now you can type commands in, like "ps -la" to list
+up all processes running in long form.
+
+<P>
+
+<CENTER><IMG SRC="lunshot3.gif" ALT="[PIC: screenshot showing results from &quot;ps-la&quot; ]"></CENTER>
+<BR>
+By pressing F3 again you can get another promt (in the upper half of the screen)
+Press F1 to switch between these two halfs. The command "mem" prints an overview of used
+memory-pages (256 byte each). As you can see there are 4 processes consuming 24 pages in
+total, another 3 pages are used for buffers (pipes) and 2 pages for the 1541-driver.
+116 pages are left which are all in one big piece.
+
+<P>
+
+<CENTER><IMG SRC="lunshot4.gif" ALT="[PIC: LUnix with two shells running ]"></CENTER>
+<BR>
+An other way to start commands is shown in the next screenshot. You can "connect" two commands by inserting a "!"
+this will pipe all output from the first command to the input of the second command. Both
+commands will run at the same time ! By putting a "&amp;" at the end of the commandline
+you can make all the commands run in the "background", means you can go on writing new commands
+without waiting for the results.
+
+<P>
+
+<CENTER><IMG SRC="lunshot5.gif" ALT="[PIC: LUnix screenshot showing the above ]"></CENTER>
+<BR>
+You can also run a third session using "term9600" the LUnix terminal-server, i should better call
+it "getty" because thats how this is called in normal UNIX-systems. After connecting a
+RS232-Terminal to your little C64 you can login into LUnix from this terminal.
+Such a terminal-session can look like <A HREF="llog.txt">this</A>.
+<HR>
+<A HREF="mailto:daniel.dallmann@studbox.uni-stuttgart.de">Send comments</A>
+</BODY></HTML>

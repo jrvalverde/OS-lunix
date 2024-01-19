@@ -1,0 +1,116 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>Cross development system</TITLE>
+</HEAD>
+<BODY>
+
+<CENTER><H1>Cross development system</H1></CENTER>
+<CENTER>updated Nov 23 1997</CENTER>
+
+<P>
+<HR>I'm writing a cross-development system to speed up my work with the
+next version on LUnix. The whole system consits of 3 (or 4) more or less
+independent parts. All the programs are written for gcc (GNU-C-Compiler),
+it should be possible to run (compile) them on every system with gcc (especialy
+all UNIX-systems). 
+<BR>
+<STRONG>Use the tools with care, when you run them in an insecure environment (other than UNIX).
+</STRONG><HR>
+<CENTER>NO WARRANTY</CENTER><BR>
+
+BECAUSE THE PROGRAM IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
+FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE LAW.  EXCEPT WHEN
+OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES
+PROVIDE THE PROGRAM "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED
+OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS
+TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE
+PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING,
+REPAIR OR CORRECTION...
+
+<HR>
+
+<DL>
+<DT><A HREF="lupo.html">The preprocessor (lupo v0.17)</A></DT>
+
+<DD>Lupo (little, universal preprocessor) is designed to proprocess assembler-sources
+of every kind. Lupo can expand macros, includes and conditional assembly.
+The syntax is very near to that of normal C-preprocessors, there are commands
+like #if, #elif, #endif, #define, #ifdef, #ifndef, ... 
+<BR>
+<P></DD>
+
+<DT><IMG SRC="updated.gif" ALT="[updated] "><A HREF="luna.html">The assembler (luna v1.23)</A></DT>
+
+<DD>Luna (lunix assembler) is a normal assembler (multi pass) that has
+some additional features to help creating LUnix-applications. Luna can
+also generate object files that can be processed with lld (a linker).
+<BR>
+<P></DD>
+
+<DT><A HREF="lld.html">The linker (lld v0.05)</A></DT>
+
+<DD>Lld (little linker) can link many objectfiles, librarys to one executable,
+and can create librarys from objectfiles. The only assembler that is able
+to create objectfiles for lld is luna. 
+<BR>
+<P></DD>
+
+<DT><A HREF="http://hld.c64.org/poldi/peephole.html">A peephole optimizer (opt65)</A> <EM>(optional, not included)</EM></DT>
+
+<DD>Okay, such a optimizer is normaly part of a compiler, but you can use
+it for handwritten sources too (it sometimes helps finding bugs in your
+code, a good code can't be optimized by this optimizer, so everytime there
+is a &quot;REMOVED&quot;-remark of opt65s output you should take a deeper
+look into your code :-) 
+<BR>
+<P></DD>
+
+<DT><IMG SRC="updated.gif" ALT="[updated] " ALIGN=top><A HREF="doc/stdlib.txt">Standard library + include files</A> <EM>(mainly for LUnix)</EM></DT>
+
+<DD>The library provides some basic routines, to help you writing applications for LUnix.
+At the same time it tries to match the lib6502, the <A HREF="http://www.tu-chemnitz.de/~fachat/csa/lib6502.html">standard 6502 library</A> as described
+by Andr&eacute; Fachat, to give a unified interface to the operating system.
+<BR>
+<P></DD>
+</DL>
+
+<H3><A HREF="pkg/tools64.tgz">All in one !</A></H3>
+<P>I made a 'tar'-archive of lupo, luna and lld (sources and some docu). Plus many
+include files and a complete library of system calls for LUnix and many examples
+for applications. You can download it from <A HREF="pkg/tools64.tgz">here</A> (46801 bytes).
+
+<HR>
+
+<H2 ALIGN=CENTER>Compiled versions:</H2>
+
+<P><B>for AMIGA</B> </P>
+
+<P>Many thanks to <I>Stefan Haubenthal</I>, who gave me compiled binarys
+for AMIGA. (In a LHA-archive.) <A HREF="http://hld.c64.org/poldi/lunix/pkg/amiga6.lha">amiga6.lha (42370
+bytes, lld v0.05, luna v1.21, lupo v0.16)</A> </P>
+
+<P><STRONG>for 80x86-PC running MSDOS </STRONG>
+
+<P> I've compiled them for 80x86-PCs running MSDOS  
+(In a ZIP-achrive.) <A HREF="pkg/80x86dos.zip">80x86dos.zip (51534 bytes, lld v0.03, luna v1.16, lupo v0.13)</A>
+
+<P><STRONG>for 80x86-PC running OS/2</STRONG>
+
+<P><IMG SRC="updated.gif" ALT="[updated] " ALIGN=top>Many thanks to <EM>Joachim Probst</EM>, who gave me compiled binarys for OS/2 (ZIP-archive). 
+   <A HREF="http://hld.c64.org/poldi/lunix/pkg/80x86os2.zip">80x86os2.zip</A>
+   Should run on every 32bit OS/2 with EMX runtime environment (lld v0.05, luna v1.21, lupo v0.17).   
+
+<H3>If you have compiled some of the above on an other system, especially
+systems that come without a c-compiler, please email me the executable,
+to include it here.</H3>
+
+<P>
+<HR>
+
+<H3><A HREF="http://wwwcip.rus.uni-stuttgart.de/~etk10217/c64.html#contents">BACK</A>
+to the main-C64-page (in germany)</H3>
+
+</BODY>
+</HTML>

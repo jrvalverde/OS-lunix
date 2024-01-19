@@ -1,0 +1,1012 @@
+what the hell is LUnix ????
+===========================
+
+- Lunix is a operating system for C64
+  (Like UNIX,well don't expect too much :)
+- Lunix progs. have NO direct access to hardware
+- There can be more than one process at a time
+- dynamic memory management
+- perhaps a little bit slow :)
+- independent from drivers (it will be easy to use a new driver)
+- there should be no great system-overhead in user-progs.
+   it will be quite easy to write little progs. for Lunix
+- the old math-routines will be available
+- a small kernal but multipurpose
+   (well i hope so :)
+
+How to start LUnix :
+====================
+ Get all the files (loader,lunix.sys,bootdrv.drv,init.exe,sh0.exe,...)
+ load"loader",8
+ ...
+ run
+ (read the comments)
+
+
+LUnix - commands :
+===================
+
+ count
+       Counts up from <000> to <255>
+       and put the numbers to the stdout
+       just to make some noise :)
+ hexconv
+       Converts decimal number from stdin to hex-numbers (stdout)
+       use it as a filter eg.  'ps ! hexconv'
+ kill <pid>
+       Kills a process.You can get the PIDs with 'ps'
+ man
+       Gives a short manual (to stdout)
+ mem
+       Shows some statistics about the system-memory
+ memfree
+       Shows the amount of free memory in the right corner of the screen
+       you should start it as 'memfree &'
+ mirror
+       An other filter .It will mirror lines from stdin and put them
+	(mirrored) to the stdout
+ prim <a>,<b>
+       Calculates b prime numbers starting with a and put them to
+       stdout
+ ps [-la]
+       Gives a report about (-a -> "all") processes in the system
+       -l will make 'ps' do this in a more detailed way.
+ rsh <host>
+       Send a remote-shell request to an other c64/128 (c net.doc)
+ rshserv [-v]
+       Enables remote-shells (up to 4). You should start it as
+       'rshserv &'
+ sh0.exe
+       Activates a sub-shell
+ wc
+       (filter again) Will count chars (=bytes),lines and words of
+       stdin and gives a report to stdout
+ write <PID of shell>
+       Will redirect stdin to stdou of the given PID
+
+
+How to use the LUnix-net-driver :
+=================================
+
+What do i need to run this net-driver ?
+ - You should have at least one C64/128
+   (but you'll have much more fun,if there are more that just only one
+   C64)
+ - Of course you need LUnix_v0.1p2 !
+   and the following files : "net.drv","rshserv","rsh","netstat"
+    you can get all of them (and even more) by anonymous ftp...
+    131.188.190.131   /pub/poldi/LUnix/lunix_v0.1/...
+    (i'll add the 4 'net-files' to this article)
+ - And you need a suitable cable ! (if you use more than 1 C64 :)
+   You have to connect (at least) GND,PB0,PB1,PB2,PB3,PB6
+   (all from the C64's userport) of all C64, the software enables
+   up to 6 C64 in the net.
+
+   *** if you have only one discdrive you'll need a switch to connect/
+       disconnect one of the pins to ground (eg. PB0).
+       Use a little resistor (about 470-1000 Ohms) to connect the
+       certain pin to ground.
+       If the connection is swiched 'ON' all the communication
+       between the computer is disabled.
+
+How to start it :
+ - First unplug all the computers and discdrives/monitors...
+ - Then connect the userport-pins (you should try to connect the GND-pin
+   first)
+ *** only one discdriver: connect the GND to the discdrive (!),to
+     prevent damage when connecting/disconnecting it to one computer
+     after an other later.
+ - Now shitch them all on
+ - Load and start LUnix,
+   press 'add a session' ,type 'net.drv X' X is the ID of the certain
+   computer.The ID is a number from 1..6 (don't use the same ID twice !)
+   Then enable logins from other computer to this computer by starting
+   the remote-shell-server process by typing 'rshserv -v &'
+   (-v is not neccessary).
+	    <-do this with every computer you have connected .
+
+Thats it ! The net is now active.
+
+You can use the net to execute shells on other (or the local) computer.
+
+just type 'rsh X' (X- is the ID of a certain computer, that is connected
+with the local computer)
+and you should get a 'remote shell' from that computer to work with :)
+The actual 'rshserv' process enables up to 4 remote-logins at a time
+(it doesn't matter from what computer you are calling)
+
+Type 'exit' to logout again.
+
+
+
+ *** only one discdrive:
+     You can use one of the computer to work as server (this will be
+     the only computer with a discdriver later)
+     You just have to start 'rsh's on the other computer in direction
+     to the server.
+     But how to do that if there is only on discdriver available ?
+     That what's the mentioned shitch is for !
+     Switch 'ON' (and block all net actions),then connect the discdrive
+     the one of the other computer and type 'rsh Y' (Y is the servers ID)
+     connect to the next computer...and so on...then connect the
+     discdrive to the 'server' and switch 'OFF' !......
+
+
+If you have questions...or something else,please let me know !
+
+<zcmm1121@rpool1.rus.uni-stuttgart.de> = Daniel Dallmann
+
+
+The LUnix - system routines
+===========================
+
+$9000 - Create process-run-table
+$9003 - Declare process		 < A=StackPage,X/Y=StartAdr	> A=IPID
+$9006 - Send interupt		 < A=IPID,X/Y=I-Adr		> c=Error
+$9009 - Block process		 < A=IPID,X/Y=WaitState		> c=Error
+$900C -
+$900F - Unblock process		 < X=IPID			> c=Error
+$9012 - Break
+$9015 * Kill process		 < X=IPID,A=ExitCode  (FF=ex.nicht,FE=Killed with error)
+$9018 * Suicide			 < A=ExitCode
+$901B * Suicide with error
+$901E - Unblock process		 < $C262/3=WaitState,A wrid ybergeben
+$9021 - Open Pipe		 < A=[7]0Byte/1Page[6]0Inp/1Outp > X=#Ch
+$9024 - Join Pipe		 < A=[7]0Inp/1Outp,X=#Ch       > c=Error
+$9027 - Close Pipe		 < X=#Ch		       > c=Error
+$902A - PipeInp			 < X=#Ch > A=Byte,c=Error (A:00=EOF,FF=Err)
+$902D - PipeOutp		 < X=#Ch,A=Byte		       > c=Error
+$9030 - MemAlloc (raw)		 < X=Occ.Code,A=numb.of Pages  > A=MID,c=Error
+$9033 - MemFree	 (raw)		 < A=MID		       > c=Error
+$9036 - PageAlloc (raw)		 < X=Occ.Code		       > A=MID,c=Error
+$9039 - LessMemBlock
+$903C * GetExitCode		 < A=IPID		       > c=Error
+$903F * Lock (Pass Semaphore)	 < X=#Nr		       > c=Error
+$9042 * Unlock			 < X=#Nr		       > c=Error
+$9045 * Initiate process	 < A=Priority,X=SuperPage      > A/Y=PID,c=Error
+$9048 * SetSupByte		 < A=Byte,X=Page,Y=Offset
+$904B * Send Signal		 < A/Y=PID,X=#SigNr	       > c=Error
+$904E * Get DriverPage		 < X/Y=Filename		       > A=DrvPage,X/Y=Name' c=Error
+$9051 * Mover			 < A=Org.adr. (Hi)	       > A=last code
+...
+$905D * bas.StringOut		 < X=#Ch followed by bit<adr   > c=Error
+$9060 * GetIPID			 < A/Y=IPID		       > X=IPID,c=Error
+$9063 * PLoad			 < A=DrvPage,X/Y=Name'	       > A=MID,c=Error
+$9066 * Get (from StdIn)				       > A=Byte,c=Error
+$9069 * Put (to StdOut)		 < A=Byte		       > c=Error
+$906C * Put (to StdErr)		 < A=Byte		       > c=Error
+$906F * PipeChk			 < X=#Ch		       > z=Empty,c=Error,n=full
+$9072 * MemAllocate		 < A=Number of pages	       > A=MID
+$9075 * MemFree			 < A=MID		       > c=Error
+
+
+
+ * - important routines for the user
+
+
+System-Tables
+===============
+
+$C000 - $C01F : Bit 0..3 (dec0-15) process priority
+		Bit 5	 1->Stopped process (because of Error)
+		Bit 6	 1->Process is blocked (Waiting for event)
+		Bit 7	 1->Process is running
+$C020 - $C03F : Stack max-size
+$C040 - $C05F : Stack size
+$C060 - $C07F : ZeroPage start adr.
+$C080 - $C09F : ZeroPage size
+$C0A0 - $C0BF : Stack+ZP - Page
+$C0C0 - $C0DF : WaitState 1.Byte
+$C0E0 - $C0FF : WaitState 2.Byte
+		  00 00 - no WaitState
+		  01 xx - Wait for 'not full' pipe #Ch
+		  02 xx - Wait for 'not empty' pipe #Ch
+		  03 00 - Wait for free pipe
+		  04 00 - Wait for free memorypage
+		  05 00 - Wait for free process
+		  06 00 - Wait for signal
+		  07 xx - Wait for process exitcode IPID
+		  08 xx - Wait for unlock #Nr
+		  09 00 - Prozess is growing
+$C100 - $C11F : Duration (0..15)
+$C120 - $C12F : next IPID
+$C140 - $C15F : Time LSB
+$C160 - $C17F : Time
+$C180 - $C19F : Time MSB
+$C1A0 - $C1BF : PID  LSB
+$C1C0 - $C1DF : PID  MSB
+$C1E0 - $C1FF : IPPID (Internal Parent Process IDentification)
+$C200 - $C21F : SuperPage (Pointer)
+$C220 - $C23F : Memory bitmap (one bit for each Page)		'1'=free Page
+$C240 - $C25F : Pipe   bitmap (one bit for each possible Pipe)	'1'=free Pipe
+$C260	      : PID (LSB) Counter
+$C261	      : PID (MSB) Counter
+$C262..4      : buffer
+$C265	      : Pipe descriptor pointer	       (starting with $FF)
+$C266	      : Pipe descriptor pointer (LSB)  (starting with $00)
+$C267	      : SystState
+		  Bit 3	   LessMemory
+$C268..B      : Lock/Unlock bitmap  (SystemSemaphores)	#Num	'1'=locked
+		  Byte 0,Bit 7 : IEC - Bus		#0
+			 Bit 6 : Keyboard		#1
+			 Bit 5 : Joystick Port 0	#2
+			 Bit 4 : Joystick Port 1	#3
+			 Bit 3 : SID voice1		#4
+			 Bit 2 : SID voice2		#5
+			 Bit 1 : SID voice3		#6
+			 Bit 0 : VIC screen (viewer)	#7
+		  Byte 1       : VIC-sprites 0..7	#8..#15
+		  Byte 2       : Userport bits 0..7	#16..#23
+		  Byte 3       without function yet
+$C280 - $C29F : Pipe descriptor tab.
+$C2A0 - $C2AF : Driver-Chars	    ($00 = not in use)
+$C2B0 - $C2BF : Driver-Pages
+$C300 - $C3FF : Memory - Pageowner+Flags
+		  Bits 0..5 Owner
+			    dec.0-31 IPIDs
+			    dec.  32 Kernel
+			    dec.  34 Pipe descriptor
+			    dec.  35 Pipe contents
+			    dec.  37 Process Stack
+			    dec.  38 Driver
+		  Bit	6   MoveBit (not implemented yet)
+		  Bit	7   FreeBit
+$C400 - $C4FF : Memory MIDs
+$C500 - $C5FF : Pipe hash pointer LSB
+$C600 - $C6FF : Pipe hash pointer MSB
+
+More details about the routines
+===============================
+
+$9000 - Create process-run-table
+
+	Sets the duration-bytes and the follow-bytes of the active
+	processes.
+	The irq must be disabled !
+
+	First makes a summation of all priority-bytes (consider only the ready/running
+	processes).    factor:= 50 / sum
+		       for all ready/running processes do
+			  duration[process]:=priority[process] * factor
+	This will make sure,that every process will be active at least once every
+	50 IRQs (thats not the exact number,its only an average value).
+	Ready processes will now called running...
+	In addtition ($9000) will calculate the next-process[] pointer.
+	Every process will point to the next process to be activated.
+		$C000+IPID:= priority + flags(ready/running/blocked/zombie/unused)
+		$C100+IPID:= duration (the number of IRQs the process will stay active)
+		$C120+IPID:= pointer to the next process (his IPID)
+
+$9003 - Declare process		 < A=StackPage,X/Y=StartAdr	> A=IPID
+
+	Allocates a IPID and sets some standart values
+	IRQ must be disabled !
+	 (the process may be blocked because of a full process-run-table)
+
+	(This routine-pointer will perhaps be removed in a later version,because
+	its only used by the system itself)
+	This will allocate a free IPID and reset the IPIDs table:
+		$C000+IPID:= priority(=4) + flags(=ready)
+		$C020+IPID:= stackmaximum(=63)
+		$C040+IPID:= stacksize(=8)
+		$C060+IPID:= Zeropage Start adress (=0)
+		$C080+IPID:= Zeropage area size (=0)
+		$C0A0+IPID:= Stack+Zeropage Page (-will be allocated first then
+						   inserted here-)
+		$C0C0+IPID:= Waitstate(=0)
+		$C0E0+IPID:= Waitstate(sec.)(=0)
+		$C140+IPID:= TimeLowest (=0)
+		$C160+IPID:= TimeMid (=0)
+		$C180+IPID:= Timehighest (=0)
+		$C200+IPID:= Superpage-pointer (=hi of startadr given in y-reg)
+	Reset the process' stack :
+	8 Bytes :  on the top :	    Akku
+				    X-reg
+				    Y-reg
+				    PSR
+				    PC(lo,hi)
+				    suicide adr.-1 ($1A,$90)
+
+$9006 - Send interupt		 < A=IPID,X/Y=I-Adr		> c=Error
+
+	Modifies the Stack of an other (or the current) process :
+	  simulates an irq to the adr. in X/Y
+	  return with rti !
+	IRQ must be disabled
+
+	Simulates an IRQ to a certain process.
+	(sending to oneself is possible too,in this case
+	this routine will simply jump to the adr (X/Y-regs))
+	Modify the process' stack in that way that
+	the computer will jump to the given adr,when the process is activated next,
+	with no change of any register or even the PSR (Processor status register)
+
+
+$9009 - Block process		 < A=IPID,X/Y=WaitState		> c=Error
+
+	Set the WaitState and the Blocked-Bit and calls $9000
+	irq must be disabled
+
+	Quite simple: it checks if the process exists ($C000+IPID != 0)
+	then sets the WaitState (X/Y-reg) and the process flags
+	$C000+IPID:=old value AND $0F OR $40
+	and jump to $9000
+
+$900C - (without funktion yet)
+
+$900F - Unblock process		 < X=IPID			> c=Error
+
+	Removes the Blocked-Bit and sets the WaitState to $0000 + call $9000
+	(disabled irc!)
+
+$9012 * Break
+
+	stops the process and calls the follow-process
+	all flags will be left unchanged
+
+$9015 * Kill process		 < X=IPID,A=ExitCode  (FF=ex.nicht,FE=Killed with error)
+
+	Kills (an other) process with an exitcode
+	   - all locked semaphores will be unlocked
+	   - all allocated memory will be set free
+	   - all opened files will be closed
+	   - the stdin/stdout/stderr - pipe will be closed
+	   - signal #7 to all children
+	   - set IPID free
+
+$9018 * Suicide			 < A=ExitCode
+
+	same as $9015 but suicide....	:)
+
+$901B - suicide with ExitCode $FE   (function see $9015)
+
+$901E - Unblock process		 < $C262/3=WaitState,A will be passed
+
+	Unblock all processes with a certain WaitState
+	works like $900F
+	A will be passed to the unblocked process
+
+$9021 - Open Pipe		 < A=[7]0Byte/1Page[6]0Inp/1Outp > X=#Ch
+
+	Opens a pipe.Allocates memory for the pipe-descriptor
+	A pagepipe will be opened as a special bytepipe
+	  (the process may be blocked because of -less memory
+						 -no pipe left )
+	IRQ will be disabled after open !
+
+$9024 - Join Pipe		 < A=[7]0Inp/1Outp,X=#Ch       > c=Error
+
+	Joins a (opened) pipe.Each pipe must be opened AND joined to work correctly !
+	and error could be caused by joining a not opened or closed pipe
+			or by a read-join of a read-opened pipe
+	There is only ONE process as a reader but there may be up to 127 writing
+	processes for each pipe.
+	IRQ will be disabled after join !
+
+$9027 - Close Pipe		 < X=#Ch		       > c=Error
+
+	Close a pipe.If the pipe is completely closed,that means closed from the
+	reading process and ALL writing processes,all the allocated memory of this
+	pipe will be set free.
+	IRQ will be disabled after close !
+
+$902A - PipeInp			 < X=#Ch > A=Byte,c=Error (A:00=EOF,FF=Err)
+
+	Reads one byte from a pipe.
+	Errors with A=$FF :
+	       read without permission (you are not the reader of this pipe)
+	       read from a not existant pipe (wrong #Ch ?)
+	Errors with A=$00 :
+	       Empty pipe and no writer left (writer has closed the pipe)
+	IRQ will be disabled !
+
+$902D - PipeOutp		 < X=#Ch,A=Byte		       > c=Error
+
+	Puts one byte to a pipe.
+	Errors :
+	       write to a not existant pipe
+	       write to a pipe without reader
+
+$9030 - MemAlloc		 < X=Occ.Code,A=numb.of Pages  > A=MID,c=Error
+
+	Allocates a number of pages in one piece.
+	The MID is the same as the start-hi-adr of the allocated memory area.
+	Errors : there is not enough memory
+	IRQ must be disabled !
+
+$9033 - MemFree			 < A=MID		       > c=Error
+
+	Set allocated memory areas free
+	   (memfree won't unblock other processes !!! but don't forget to do this !)
+	IRQ must be disabled !
+
+$9036 - PageAlloc		 < X=Occ.Code		       > A=MID,c=Error
+
+	Allocates a single page but fast (in an other way than $9030!)
+	Errors : less memory
+	IRQ must be disabled
+
+$9039 - LessMemBlock
+
+	Blocks the process and sets the systemflag 'LessMemory' makes a Break ($9012)
+	then clears the 'LessMemory'-flag if there is no other blocked
+	(because of less memory) process.
+	IRQ disabled !
+
+$903C * GetExitCode		 < A=IPID		       > c=Error
+
+	Block the process then gets the exit-code
+	IRQ will be disabled and then enabled again
+
+$903F * Lock (Pass Semaphore)	 < X=#Nr		       > c=Error
+
+	Something like the PASCAL - P(...) procedure with semaphores
+	to prevent more then one process using the same XY.
+	XY might be the keyboard or IEC-Port or something like that...
+	   (the process will be blocked if the semaphore is locked)
+	irq will be enabled after that
+
+$9042 * Unlock			 < X=#Nr		       > c=Error
+
+	see PASCAL - V(...) procedure
+	unlock a semaphore.
+	irq will be enabled
+
+$9045 * Initiale process	 < A=Priority,X=SuperPage      > A/Y=PID,c=Error
+
+	this will do :	 - allocate memory for Stack+ZeroPage Buffer
+			 - get a IPID
+			 - own the process-body to the new IPID
+			 - open stdin/stdout/stderr pipes for the new process
+			 - sets process parameter and calls $9003
+	Errors: pipe-errors,no support of signal #0,...
+	Block because of :no IPID,no memory,...
+	irq will be enabled after this
+
+$9048 * SetSupByte		 < A=Byte,X=Page,Y=Offset
+
+	is a very simple routine
+	just makes something like POKE X*256+Y,A
+	there will be no change of A,X,Y
+	irq will be enabled
+
+$904B * Send Signal		 < A/Y=PID,X=#SigNr	       > c=Error
+
+	Sends a signal to a process.Signals 1-15 are available
+	    (#0 - initiate process,used only be the system and only ONCE!)
+	     #7 - killed father process
+	irq will be enabled
+
+$904E * Get DriverPage		 < X/Y=Filename		       > A=DrvPage,X/Y=Name' c=Error
+
+	Get the DriverPage from a Filename X/Y-Pointer of the first char,terminated by $00
+	The first char is the driverchar the second is ':' or '/' or '-'
+	the rest of the string is the normal dos-filename = Name'
+	Errors: no such driver
+	irq will be enabled
+
+$9051 * Mover			 < A=Org.adr. (Hi)	       > A=last code
+
+	since the startadr. of a program is variable you have to correct the
+	jmp$XXXX and jsr$XXXX ...
+	This will be done by the Mover	  :)
+	Just put the original adr (Hi-Byte) in the akku and then JSR  Mover
+	the mover will start by the next command and will continue till there
+	is a hexcode $02 (witch would cause a guru-meditation  :)   )
+	There is one special code - $0C $LO $HI
+	this will cause a (mover-)jmp to the abs-adr
+
+		 e.g.	  org=$C800
+			  lda# $C8
+			  jsr  Mover
+			  jsr  $c8xx
+			  lda  $c8yy,x
+			   ....
+			  rts
+			  $02
+...
+$9060	GetIPID			 < A/Y=IPID		       > X=IPID,c=Error
+
+	Gets the IPID from the PID
+	Error : there is no such PID
+	irq must be disabled !
+
+$9063 * PLoad			 < A=DrvPage,X/Y=Name'	       > A=MID,c=Error
+
+	Load a process-code.
+	Errors : - is no process code
+		 - wrong version
+	irq will be enabled after that
+
+$9066 * Get (from StdIn)				       > A=Byte,c=Error
+
+	a more comfortable version of $902A (PipeInp)
+	X,Y with no change,automated stdin pipe #Ch - geting
+	irq will be enabled
+
+$9069 * Put (to StdOut)		 < A=Byte		       > c=Error
+
+	c $9066 but like PipeOut on StdOut
+
+$906C * Put (to StdErr)		 < A=Byte		       > c=Error
+
+	c $906C but PipeOut on StdErr
+
+$906F * ChkPipe			 < X=#Ch		       > n=full,z=Empty,c=Error
+
+	Checks a pipe,A/X/Y will be changed
+
+$9072 * MemAllocate		 < A=Number of pages	       > A=MID
+
+	works like $9030 but sets X=IPID
+	and enables the irq
+
+$9075 * MemReallocate		 < A=MID		       > c=Error
+
+	works like $9033 but checks if you are the owner and unblock the
+	waiting processes + enables the irq
+
+
+ * - Wichtige Routinen fyr den Benutzer
+
+Pipes :
+=======
+  A pipe is defined by the following bytes :
+    Byte 0 : PID of the receiver
+    Byte 1 : Pipe Type Byte (PTB)
+    Byte 2 : Read Pointer  (RP)	  * points to the last byte which was read from the buffer
+    Byte 3 : Write Pointer (WP)	  * points to the last written byte in the buffer
+    Byte 4 : SPC		  * counts the send-processes
+
+    the next bytes have different meaning depending of the pipe-type...
+
+	       Byte-Pipe	     Page-Pipe
+    Byte 5 : Puffer		   Read Pointer (Lo) (RPL)
+    Byte 6 : Puffer		   Write Pointer (Lo) (WPL)
+
+    Bytes 7...31  buffer	   pointer to buffer-pages
+
+    Size of the pipe-buffer:
+	     27 Byte with byte-pipe
+    und	   6400 Byte with a page-pipe
+
+  Pipe Type Byte (PTB) :
+    Bit 0  : always 1
+    Bit 1  :
+    Bit 2  :
+    Bit 3  : Shrink-Bit	 * if it is set the pipe will look as it is full
+			   as long as the system konverts the pipe into
+			   a byte-pipe (which needs less memory than a
+			   page pipe)
+			   (-> Special Byte Pipe )
+    Bit 4  : Empty-Flag
+    Bit 5  : Full -Flag
+    Bit 6  : Special	 * marks a Special-bype-pipe
+    Bit 7  : Type-Bit	 * 0 -> Byte-Pipe
+			   1 -> Page-Pipe
+
+
+The LUnix application-structure :
+=================================
+
+     on disc :		  offset/memory	     in memory
+--------------------------------------------------------
+'executable'  : $FF $FF|	       |	--
+..for version : aa     |    0000       |   *) start-page
+    aa.bb	bb     |    0001       |   *) Std.In  (Pipe Nr.)
+lengh/pages	nn     |    0002       |   *) Std.Out (Pipe Nr.)
+unused		00     |    0003       |   *) Std.Err (Pipe Nr.)
+--------------------------------------------------------
+max-stack-size	nn     |    0004       |   *) 0	  \
+ZP-start	aa     |    0005       |   *) 1	   |
+ZP-size		nn     |    0006       |   *) 2	   | bitmap of 32 semaphores
+unused		00     |    0007       |   *) 3	  /   (PrzSemaphores)
+--------------------------------------------------------
+area of pointer	       | 0008 - 0037   |  16-pointer each 3byte (see below)
+ signal-catching       |	       |
+ routines	       |	       |
+CMD		       | 0038 - 003F   |  CMD-Name (8 chars zero terminated)
+--------------------------------------------------------
+code...		       | 0040...       |  code...
+
+Format of a signal-pointer:
+ first byte :  00 - NIL (vector is not defined or the process doesn't catch this signal)
+	       4C - Absolute branch
+	       2C - Relative branch (relative to offset 0000)
+ second,third byte : LO/HI byte of adress
+
+Note: the first pointer (offset 0008-000A or signal 0) has a special meaning:
+ it points (absolute adr. ! no matter with value the frist byte has) to the
+ initial/startup - routine of the process (this is only called once in the lifetime of
+ a process)
+
+ *) -> These bytes will be initialized by the system or the parentprocess
+
+Offset 0008 has a special meaning too :
+ it contains the hi-adr. of the parameter-page (of 00 if there are no parameters for
+ the process) (again initialized by the parentprocess)
+
+The semaphores : (#n - semaphore n)
+================
+
+  0.Byte : Bit7 (#0): IEC-Bus
+	   Bit6 (#1): Keyboard
+	   Bit5 (#2): Joystick 1 (Port 56320)
+	   Bit4 (#3): Joystick 2 (Port 56321)
+	   Bit3 (#4): SID-Voice 1
+	   Bit2 (#5): SID-Voice 2
+	   Bit1 (#6): SID-Voice 3
+	   Bit0 (#7):  unused maybe NMI ?
+  1.Byte : Bits0-7 (#15..#8): the sprites 0-7
+  2.Byte : Bits0-7 (#23..#16): Userportbits 0-7 (Port 56577/56579)
+  3.Byte : --undefined--
+
+Semaphores are needed to prevent more than one process to work with one
+ressource (eg. a sprite or the discdrive,printer)
+
+If a process wants to use eg. the printer, then it has to call the
+'lock'-routine of the kernal (for the printer or the discdrive you have to
+lock semaphore #7)
+The system will check if the certain semaphore is lock or not...
+ - if it is locked,then the process will be blocked till it is unlocked
+ - if it is unlocked, then the coresponding bit will be set (this will lock
+   the semaphore for other processes)
+
+Later the process has to unlock the semaphore it has locked
+(if a process is killed during action all the locked semaphores will be unlocked
+automaticaly)
+
+Note:
+ Do never lock more that one process like this :
+    lock #a
+    lock #b
+    ...
+ There may be the risc of a  'deadlock' situation...better do it like...
+    lock #a
+    - check if #b is free -> if not unlock #a and tryagain...
+    lock #b
+    ...
+
+
+Signals :
+=========
+  You can send signals to other processes using the 'sendsignal' routine of the kernel
+  ($904B)
+		    lda #IPID
+		    ldx #SignalNumber (1-15)
+		    jsr $904B
+
+  For the orther process it will look like a normal IRQ !
+  The processor will continue at the given adr. (signal-pointer!)
+
+Note:
+ This call is (normaly) only used by the system....
+ You shouldn't handle with IPIDs at all ! (only use PIDs if possible !)
+ If so,you have to disable the irq ! 'SE I' while working with IPIDs
+
+Table of used signals
+ signal 0  - Init
+ signal 6  - user break
+ signal 7  - 'killed parent process'
+ signal 8  - 'killed child process'
+ signal 9  - kill-sequence
+
+
+About the protocol i use for NET.drv
+====================================
+
+The protocol is quite simple.I have used 5 pins from the second port of cia b
+which are pb0 pb1 pb2 pb3 and pb6. pb6 is only used by the receiver
+look at the table to see how the other pins are coded
+
+  'pb3 pb2 pb1 pb0   meaning
+  '0   0   0   0   - repeat symbol
+  '0   0   0   1   - symbol 1
+  '0   0   1   0   - symbol 2
+  '0   0   1   1   * ID of comp 6
+  '0   1   0   0   - symbol 0
+  '0   1   0   1   * ID of comp 5
+  '0   1   1   0   * ID of comp 4
+  '0   1   1   1   - symbol 3
+  '1   0   0   0   - symbol 4
+  '1   0   0   1   * ID of comp 3
+  '1   0   1   0   * ID of comp 2
+  '1   0   1   1   - symbol 7
+  '1   1   0   0   * ID of comp 1
+  '1   1   0   1   - symbol 5
+  '1   1   1   0   - symbol 6
+  '1   1   1   1   ( unused )
+
+if the link is unused (that means all the pins are at hi-level)
+the sender will put his own ID to the port, waits for min 80us
+then checks if his ID has been falsified by an other computer
+sending an other ID at the same time.
+(the detection is possible because the CIA has been programmed to behave like an
+open collector output -> never force on of the oins to a high level)
+
+After that the sender will put the receivers ID to the port
+and wait max 17ms for a response (wait till pb6 is at low-level)
+then the 63 packet-bytes will be transfered.
+Every time the receiver detects a change on the port he assumes
+this to be a new symbol gets this symbol and alternates pb6
+every symbol contains 3bit of information.
+If there are two equal symbols one after an other the second
+one has to be replaced by the 'repeat' symbol.
+Otherwise the receiver wouldn't detect a port-change.
+And the second symbol would be lost
+
+After the last symbol the sender has to put symbol 6 or symbol 5
+(don't use two equal symbols one after an other!)
+to the port and wait for a change of pb6
+(* the receiver has calculates the sum of all 63 bytes and checks
+the least significant byte...
+  if it is 0 then the transmission has been correct and in addition of
+  inverting pb6 the receiver will force pb3 to a low-level)
+The last thing the sender does is letting all port-pins go to a high-
+level..the receiver will do the same..and the next packet can
+be transmittet the same way..!
+
+Now something about the contents of a packet
+============================================
+
+The first 5 bytes of every packet have a special meaning!
+ Byte0/1- pid of the sending process
+	  (the receiving process has to know from which process the packet
+	  came from)
+ Byte2/3- pid of the receiving process
+	  (the system has to know which process the packet is for)
+ Byte4	- flags/number of valid data-bytes
+
+Process pid=$0000 means that the local 'net-daemon'
+Possible packets to the daemon-
+ -from pid=x to daemon flags=$80
+       thats a 'hello'-signal
+ -from pid=x to daemon flags=$ff
+       thats a 'bye'-signal
+ -from pid=x to daemon flags=$01/$02/$04/$08/$10/$20/$40
+       thats a 'request'-signal
+       The only defined request yet is the $01-request which is a 'rsh'-request
+ -from pid=x to pid=y flags=$81/$82/$84/$88/$90/$a0/$c0
+       these are the request-refused signals
+       eg. flags=$81 means 'rsh refused'
+ -from pid=x to pid=y flags=$fe
+       means 'no such process'
+       This occures when a packet is sent to a non-receiving or non-existant process
+
+During a rsh-session there are packets like this
+ -from pid=x to pid=y flags=n
+       with 0<n<58
+  Thats a packet with n bytes of data, location of those data-bytes is
+  byte 5...61 (byte 62=checksum)
+
+How to use net.drv in own commands
+==================================
+
+The net.drv - program offers only very basic routines
+which are :
+
+ offset name	  arguments
+  $69	PutPack	     <X=host, A/Y=buf-adr,c=forced   >c=error
+  $6C	GetPack	     <A/Y=buf-adr,c=forced (,X=host) >X=host
+  $6F	GetReq	     <A=req.Mask,c=forced	     >A/Y=PID,X=host
+( $72	Clearup	  thats only used by the system )
+  $75	GetHostStat  <X=host			     >A=status,X=fail-average,Y=packets to send
+  $78	RemoveServer <A=req.Mask		     >c='there is an other server active'
+
+(offset to the driver-page)
+
+req.Mask :
+ $01 - remote-shell request
+ $02,$04,$08,$10,$20,$40 undefined yet
+
+host :
+ $01,$02,$03,$04,$05,$06
+ equal to the computers net-ID defined with 'net.drv x' (x=ID)
+
+buf-adr :
+ A 16-bit adress pointing to the first byte of a 63-byte buffer
+ (must point into a memory area which belongs to the certain process)
+
+PutPack :
+ X  =ID of the destination computer
+ A/Y=pointer to source/bufferspace (63-byte,with byte0/1=dest.PID [$0000 for the net-daemon])
+
+ if cc then PutPack will skip with cs if the packed could not be sent
+ if cs (forced-mode) then PutPack will try as long as it takes to send the packed only a
+   hard-error will cause a skip with cs (and A=$FF)
+
+GetPack :
+ X  =ID of the source computer
+     this is only used,when you call GetPack in forced mode.
+ A/Y=pointer to destination/bufferspace (63-byte)
+
+ if cc then GetPack will look if a packet has arived,if not it will return with cs.
+ if cs (forced-mode) GetPack will wait till there is a packet for the certain process
+   (thats you).But if the given source computer goes 'OFF HOOK' it will skip
+   with cs and A=$FF.
+   In all other cases GetPack will return with cc and the source-comp-ID in X-reg.
+
+GetReq :
+ A  =req.Mask
+
+if cc GetReq will look if a request has arived,if not returns with cs.
+cs means 'forced-mode' again,GetReq waits till there is a request and than
+returns the ID,PID of the computer/process which sent the request.
+ > A/Y=PID,X=host
+
+  eg.	lda #$01
+	se c
+	jsr GetReg
+
+    .. will wait till there is a 'remote-shell' - request
+
+GetHostStat :
+ X=host
+
+returns A=status
+	   bit 7: 1=no connection
+	X=fail average
+	   the number of unsuccessful calls (average)
+	Y=packets in i/o buffer to send
+
+RemoveServer :
+ A=req.Mask
+
+ If eg. the 'rshserv' (the remote-shell server) terminates he does
+       lda #$01
+       jsr RemoveServer
+ to make the system (the net.drvier) refuse all further rsh-requests
+ else the requests would be stored in the i/o-buffer.
+
+
+How to add a driver
+===================
+
+A driver has the same format as a normal command.
+But the first thing a driver does is hooking into the driver-table
+of the system.
+search for a unused table-position :
+	ldy # 15
+     a: lda $C2A0,y
+	beq found
+	dey
+	bpl a
+	->error
+ found: lda # DriverChar (in ascii)
+	sta $C2A0,y
+	lda # DriverPage
+	sta $C2B0,y
+ (maybe i'll make a systemcall for this in a later LUnix version)
+
+The signal-pointer then have a special meaning
+ signal 1 :  PLoad-Pointer
+ signal 15:  called by the system when a process is killed
+	     (the driver has to close files /unlock used semaphores)
+ (the other singals aren't defined yet. They may be used in a later
+  version for things like 'open file' 'close file' 'get' 'print' ...usw)
+
+Next thing the driver does is declaring his code-memory to driver-used-
+memory (replace PID by #38 in the memory-pageowner table $C300)
+and commit suicide.
+(the driver-code will stay in memory ! and can be executed by all other
+processes using the singal-pointer..)
+
+(.... to be continued)
+
+How LUnix loads/executes a command
+==================================
+
+To give you a idea of lunix i'll explain how lunix loads and executes
+processes:
+
+Lets say you are the prozess named 'A' ...
+
+here is,what A does..		...and here what the system does
+
+Process A:
+Get the whole filename eg. "@:ps"
+or more precise get the pointer to the
+whole filename and put it into
+X/Y-register (x=lo,y=hi byte)
+and call $904E 'GetDriver'
+				System:
+				Compare the first char of the filename with
+				the 'DriverChars' in $C2A0..$C2AF
+				and get the corresponding DriverPage
+				the DriverPage is the page which contains the
+				pointer to the dirver-commands. ->Akku
+				And change the filename-pointer to point to the
+				raw filename -> X/Y
+				(pointer will now point to 'ps')
+Process A:
+Akku=DriverPage,X/Y=pointer to
+the raw filename then call
+$9063 'PLoad'
+				System:
+				Call (DriverPage + Offset=$0B) which means call
+				the PLoad routine of the certain driver
+		DRIVER: (@:)
+		look for 'ps' ...
+		open and get the first 2Bytes
+		are they FF FF then ok else error
+		the following bytes are..
+		 - Version first number (=0)
+		 - Version second number (=1)
+		    (Check the version)
+		 - unused byte
+		 - number of pages to load this process
+		      -> into the Akku
+		   call $9030 'Memalloc'
+				System:
+				Are there enough free pages ? If not then block the
+				process till there are.
+				allocate the n pages (one big piece) but use the
+				location were it fits best.
+				eg.	 ##--##---#-----######----------##-##-##
+					       ***
+						this would be the best location for a
+						process needing 3 pages.
+		Driver: (@:)
+		 - then load the process code
+		  into the allocated memory.
+		  return with Akku=MID (Memory ID=location of
+		  the first page but only the hi-byte)
+***(at this time there is still no new process created, the new allocated memory
+   belongs to A)
+Process A:
+Open new Pipes to connect the
+new process with.
+open a pipe for his stdin..
+Akku=$40,call $9021 'OpenPipe'
+***($40 will open a 'byte'-pipe which can only
+    buffer up to 27 Byte)
+				System:
+				open a new pipe with one writer and (till now) no one as
+				reader.And return the channel-number of the pipe. ->X
+Process A:
+Put X (the chanel number) to NewPrcess+$01
+(it will be the stdin of the new process then)
+open a pipe for his stdout and stderr..
+Akku=$80,call $9021 'OpenPipe'
+***($80 means a 'Page'-pipe up to 6400 bytes buffer)
+				System:
+				..new pipe with A as reader and no writer.Return the
+				channel number. ->X
+***(if A will be killed exactly here there is a problem ! Because
+    the system will only close stdin,stdout,sdterr pipes of A and not
+    the new opened ones, that will shrink the available pipes in the
+    system by 2)
+Process A:
+Put X to NewProcess+$02 and NewProcess+$03
+(this pipe will be uses as stdout and stderr then)
+(if there and some parameters for the new Process,then put the location of them
+i mean the hi-byte into NewProcess+$08, or put #0 if there are no params)
+Akku=MID of the process to be created
+Call $9045 'Initiate process'
+				System:
+				write the new process into the systems process table
+				own the memory (till now it belongs to A) to B (the
+				new created process).
+				join the stdin,stdout,stderr pipes in the name of B
+				Put Bs PC to the adress which is in NewProcess+$09/$10
+				plus NewProcess.
+				return the PID of the new process. ->A/Y
+
+Process A:
+get the PID and do sth. else.....
+
+Process B:
+Akku=orginal adress hi-byte
+(this is the adr. where it has been assembled to)
+and call $9051 'Mover'
+				System:
+				Correct all non relative adresses in Bs code.
+				Till there is a $02-code.
+				To adapt it the the memory position.
+Process B:
+is now ready to do what he wants :)
+
+
+
+
+

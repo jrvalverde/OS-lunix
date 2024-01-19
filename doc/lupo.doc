@@ -1,0 +1,291 @@
+
+                     lupo - little universal preprocessor
+                     ====================================
+
+Last changed 18 May 1997 Paul Gardner-Stephen (gardners@ist.flinders.edu.au)
+
+New in this version:
+	- Some bug fixes (happy happy!)
+	- Now will handle #include <file.h> and check the following places
+		(in this order):
+		/usr/include/c64, /usr/include/lunix,
+		/usr/local/include/c64, /usr/local/include/lunix
+		/usr/include, /usr/local/include
+	  (#include "file.h" still works as before)
+	- Much nicer emacs-compatible error messages
+
+Lupo is a preprocesser disigned to process assembler-sources. (e.g
+sources for luna, a assembler specialized to create executable for the
+lunix operating system on a C64). But lupo can be used with nearly
+every other assembler too.
+
+Usage:
+
+  lupo [-l] [-r] [-s] [-o outputfile] {-dname[=macro]}+ file
+
+ Note: {body}+ means, body can be left of repeated many times.
+
+Default for outputfile is "lupo.out". Lupo returns with exitcode of 0
+if there was no error processing the file (otherwise -1).
+
+Options:
+	-l means include .line directives for error tracking
+	-r means dont remove comments
+	-s means dont remove spaces
+
+Supported preprocessor directives:
+==================================
+
+ #include "file"
+ ---------------
+
+   Paste and process contents of the file 'file' into main file.
+
+ #define name macro
+ ------------------
+
+   Used to define a macro, every time the keyword 'name' is found in
+   your assembler source, it will be replaced by 'macro'.
+   Some examples...
+
+    #define length 100
+    
+    lda  #length  ; length will be replaced by '100'
+
+    #define hi_of_sum(a,b) >((a)+(b))
+ 
+    lda  hi_of_sum(label,1123) ; will be replaced by >((label)+(1123))
+
+ #begindef name
+ --------------
+
+   Again used to define a macro, this time a macro-body may consist of
+   more than just one line.
+   Some examples...
+
+     #begindef clearscreen
+
+       ldy #0
+       sty tmp
+       ldx #4
+       stx tmp+1
+       lda #32
+     - sta (tmp),y
+       iny
+       bne -
+       inc tmp+1
+       dex
+       bne -
+
+     #enddef
+
+       clearscreen     ; will be replaced by the lines above.
+
+     #begindef asl_word(word)
+ 
+       asl word
+       rol word+1
+
+     #enddef
+
+       asl_word(tmp)   ; will get asl tmp <cr> rol tmp+1 <cr>
+       asl_word(tmp2)  ; will get asl tmp2 <cr> rol tmp2+1 <cr>
+
+  #undef name
+  -----------
+
+    Remove the macrodefinition 'name'.
+
+  #ifdef name
+  -----------
+
+    Test if macro 'name' is defined, if not remove all lines till
+    there is an #endif, #elif or #else. (the removed lines are NOT
+    processed)
+
+  #ifndef name
+  ------------
+
+    Same as #ifdef but remove, when macro is defined.
+
+  #if <expression>
+  ----------------
+
+    Resolve expression, if result is false remove lines.
+    Some examples...
+
+      name               ; true is macro 'name' defined
+      !name              ; true is macro 'name' is NOT defined
+      name1 & name2      ; true if macro 'name1' and 'name2' are defined
+      name1 | name2      ; true if either macro 'name1' or 'name2' is defined
+
+    or any combination of the above (you can also use "(",")" in expressions)
+    
+    related directives are: #elif  (else + if)
+                            #else
+                            #endif
+
+  #msg text
+  ---------
+
+    Print the message "text" to stdout whit processing this line.
+
+  #error
+  ------
+
+    Stop with error. when processing this line.
+
+
+  Specialfunctions
+  ----------------
+
+    Using the specialfunctions you can add macros, that help you
+    writing code that has a better structure.
+
+    Syntax of a specialfunction:   %%<commandlist>%%
+                    commandlist:   <command>{,<command>}+
+    
+    Available commands:
+      next  - generate a unique label (doesn't print it)
+      pcur  - insert current label (the label generated with the last
+              "next"-command)
+      push  - push current label on specialstack
+      pop   - remove top element from specialstack
+      ptop  - insert label on top of specialstack
+      plast - insert 2nd label of specialstack
+      plast 2..9 - insert 3rd,4.,... label of specialstack
+      swap  - swap upper 2 elements of specialstack
+      swap 2..9  - swap lower elements of specialstack
+
+
+Examples :
+===========
+
+==
+  welcome_string:
+
+  #if c64
+     .asc "I'm a Commodore64\n"
+
+  #elif c128
+     .asc "I'm a Commodore128\n"
+
+  #elif c65
+     .asc "I'm a Commodore65\n"
+
+  #else
+  #  msg unknown or missing definition of
+  #  msg destination.
+  #  msg use one of -dc64, -dc128 or -dc65
+  #  error
+
+  #endif
+
+  run:
+  ldx #<welcome_string
+  ldy #>welcome_string
+  jsr strout
+  rts
+==
+
+Processed with -dc64 :
+
+==
+  welcome_string:
+  .asc "I'm a Commodore64\n"
+  run:
+  ldx #<welcome_string
+  ldy #>welcome_string
+  jsr strout
+  rts
+==
+
+
+Processed with -dc128 :
+
+==
+  welcome_string:
+  .asc "I'm a Commodore128\n"
+  run:
+  ldx #<welcome_string
+  ldy #>welcome_string
+  jsr strout
+  rts
+==
+
+Processed with -dvc20 :
+
+unknown or missing definition of
+destination.
+use one of -dc64, -dc128 or -dc65
+  error:preprocessing stopped in line 17
+
+
+Example for usage of specialfunctions:
+--------------------------------------
+
+==
+#begindef if(cond)
+  cond  +   ; if
+  jmp  _if%%next,push,ptop%%
+  +
+#enddef
+
+#begindef else
+  jmp  %%next,push,ptop%% 
+_if%%swap,ptop,pop%%:  ; else
+#enddef
+
+#define endif _if%%ptop,pop%%:  ; endif
+
+; sample programm
+
+start:
+  lda  flag
+  if(beq)
+    ldx #0
+  else
+    if(bmi)
+      ldx #2
+    else
+      ldx #1
+    endif
+  endif
+  rts
+==
+
+  After processing it with "lupo -r" you'll get this code:
+
+==
+; sample programm
+
+start:
+  lda  flag
+  beq  +       ; if
+  jmp  _if__1
+
++ ldx  #0
+  jmp  __2 
+
+_if__1:        ; else
+  bmi  +       ; if
+  jmp  _if__3
+
++ ldx  #2
+  jmp  __4 
+
+_if__3:        ; else
+  ldx #1
+
+_if__4:        ; endif
+_if__2:        ; endif
+  rts
+==
+
+
+If you have questions or suggestions, please don't hold back and write
+an email to "Daniel.Dallmann@studbox.uni-stuttgart.de". thanx !
+
+   ... poldi Sep 2 1996.
+
+   Ammended Paul Gardner-Stephen May 19 1997 (gardners@ist.flinders.edu.au)

@@ -1,0 +1,48 @@
+<!DOCTYPE HTML PUBLIC "-//AdvaSoft//DTD HTML 2 extended 960415//EN">
+<HTML>
+<HEAD>
+ <TITLE>lupo - preprocessor</TITLE>
+</HEAD>
+
+<BODY>
+<CENTER><H1>lupo</H1></CENTER>
+<CENTER><H2>preprocessor for assembler-sources</H2></CENTER>
+
+<HR>
+<H3>The sourcecode is available <A HREF="src/lupo.c">here</A>. 
+</H3>
+<P>
+<HR>
+<CENTER><H2><A HREF="doc/lupo.doc">Documentation textfile</A></H2></CENTER>
+<HR>
+<IMG SRC="http://hld.c64.org/poldi/lunix/new.gif" ALT="[new] " ALIGN=top><H3>Specialfunctions added !</H3>
+Ever had a assembler programm that looked like this:
+<PRE>
+#include "struc.h"
+
+start:
+  lda  #0
+  sta  counter
+
+  whilenot(lda  counter:beq)
+    lda  flag
+    ifnot(beq)
+      ldx  #100
+      repeat
+        lda  #" "
+        jsr  print
+        dex
+      aslongas(bne)
+    endif
+    dec  counter
+  wend
+  rts
+</PRE>
+
+If your interested, then include <A HREF="src/struc.h">this</A> into your assembler code and look at <A HREF="doc/struc.txt">this</A>, if you'd
+like how to use it.
+<HR>
+<H3><A HREF="http://wwwcip.rus.uni-stuttgart.de/~etk10217/c64.html#contents">BACK</A> to the main-C64-page (in germany)</H3>
+
+</BODY>
+</HTML>

@@ -1,0 +1,23 @@
+; $VER: clear 1.1
+; (c) by Stefan Haubenthal 1996
+
+.header "clear"
+
+SCREEN  equ     $FFED
+home    equ     19
+
+_init:
+
+        jsr     SCREEN
+        tya     ; y/2-1
+        lsr     a
+        tay
+        dey
+        lda     #"\n"
+next:   jsr     $9069
+        dey
+        bne     next
+        lda     #home
+        jmp     $9069
+
+.endofcode

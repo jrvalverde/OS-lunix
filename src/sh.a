@@ -1,0 +1,807 @@
+; source of sh
+;
+; derived from source of sh0.exe (replacement)
+;
+
+#include "kernel.inc"
+
+.header "sh"
+
+_init:
+          lda  $c2a0
+          sta  path            ; set default path
+          ldx  #0
+          stx  xflag
+          stx  cp_cnt          ; no child processes jet
+          stx  hist_wr
+          lda  #1
+
+        - sta  histbuf,x       ; clear historybuffer
+          inx
+          bne  -
+
+          stx  histbuf
+          lda  _base+8
+          bne  start
+          ldx  stdout_ch
+          jsr  strout
+          bit  txt_welcome
+
+start:    lda  #0              ; reset status 
+          sta  stat
+          sta  stat2
+          sta  bflag
+
+          lda  xflag
+          cmp  #$ff
+          beq  eof
+
+          lda  _base+8
+          beq  interactive
+
+          ; read commandline from parameterpage
+
+          sei
+          sta  _hl+1
+          ldy  #0
+          sty  _hl
+          iny
+
+        - lda  (_hl),y
+          sta  pfpage-1,y
+          beq  +
+          iny
+          bne  -
+
+        + sty  pflen
+
+          lda  _hl+1
+          jsr  mfree
+
+          lda  #$ff
+          sta  xflag
+
+          jmp  parse_line
+
+interactive:
+          jsr  scan_childs
+
+          lda  path            ; print prompt
+          jsr  putc            ; "[drv-char]> "
+          lda  #">"
+          jsr  putc
+          lda  #32
+          jsr  putc
+          bcc  +
+
+outerr:   jmp  panic           ; suicide with error
+
+        + lda  #0              ; reset length of command line
+          sta  pflen
+          lda  hist_wr
+          sta  hist_rd
+
+in_loop:  jsr  getc            ; read command line
+          bcc  +
+
+          cmp  #255
+          beq  outerr
+
+eof:      lda  #0
+          jmp  suicide         ; exit with exitcode 0
+
+        + cmp  #4              ; CTRL+d ?
+          beq  eof
+          cmp  #13
+          bcc  in_loop
+          cmp  #17
+          bne  +
+          jmp  down_hist
+        + cmp  #145
+          bne  +
+          jmp  up_hist
+        + pha                  ; remember char
+          cmp  #20
+          bne  ++              ; not backspace, then print to screen
+
+          ldx  pflen
+          beq  +               ; empty line, then skip
+          dex                  ; else emulate backspace by...
+          stx  pflen
+          lda  #157            ; csr-left
+          jsr  putc
+          lda  #32             ; space
+          jsr  putc
+          lda  #157            ; csr-left
+          jsr  putc
+          bcs  outerr
+
+        + pla                  ; and get next char
+          jmp  in_loop
+
+        + jsr  putc            ; print character to screen (stdout)
+          pla                  ; (cleanup stack)
+          bcs  outerr
+          cmp  #13             ; was it return ?
+          beq  ++
+
+          ldy  pflen           ; line too long ?
+          cpy  #255
+          beq  +               ; then skip adding to buffer
+
+          sta  pfpage,y        ; add char to buffer
+          iny
+          sty  pflen           ; increment length of buffer
+        + jmp  in_loop
+
+        + jsr  add_hist
+          jsr  intbef          ; internal command ("exit") ?
+          bcc  +               ; no error, then goto prompt
+
+parse_line:
+          lda  #0              ; else reset stopflag and
+          sta  stopflg         ; read-pointer
+          sta  exptr
+          ldx  pflen           ; load length of commandline
+          bne  dothework       ; and start processing it.
+
+        + jmp  start           ; no command, then skip
+
+stopanormal:
+          jmp  sendstop
+
+_sig.userbreak:                ; catch break-signal and pass it to
+          pha                  ; running processes
+          bit  stat2
+          bmi  stopanormal     ; if there are (!)
+          lda  #255            ; else just remember
+          sta  stopflg         ; (set stop-flag)
+          pla
+          rti
+
+nexnex:                        ; get next character from buffer
+                               ; suppress leading spaces
+          ldx  exptr
+
+        - lda  pfpage,x
+          and  #$7f
+          cmp  #$20
+          bne  +
+          inx
+          cpx  pflen
+          bcc  -
+
+        + stx  exptr
+          jmp  getakt+3
+
+getnex:   inc  exptr
+getakt:                        ; get actual character from buffer
+          ldx  exptr
+          cpx  pflen
+          bcs  +               ; end of buffer ?
+          lda  pfpage,x
+          tax
+          and  #$7f
+          cmp  #$20
+          beq  ++              ; reached white spaces
+          clc
+          txa
+          rts
+
+        + lda  #0
+          .byte $2c
+        + lda  #32
+          sec                  ; return with A=0 and c=1 if end of buffer
+          rts
+       
+
+        - bit filename         ; (relocated address of filename-buffer)
+
+          fnadr equ [-]+1
+
+dothework:                     ; process commandline
+          dex
+          lda  pfpage,x        ; read last character of commandline
+          cmp  #"&"            ; is it "&" ?
+          bne  +
+
+          dec  pflen
+          beq  close_reprompt
+          lda  #$80
+          sta  bflag
+          lda  #0
+          jmp  ++              ; yes, then command's stdin=NULL
+
+        + lda  #$40            ; else open pipe
+          jsr  popen
+          cli
+          txa
+
+        + pha                  ; remember command's stdin channel
+          jmp +
+
+close_reprompt:
+          pla                  ; no command, then close pipe and
+          tax                  ; get next command
+          jsr  pclose
+          cli
+          jmp  start
+
+        + sta  lopip           ; remember channel
+next_com:
+          ldy  #0              ; reset command length
+          sty  len
+          jsr  nexnex
+          bcs  oeb             ; read command
+
+        - sta  filename,y
+          iny
+          cpy  #18
+          beq  searched        ; more then 18 chars, then skip
+          jsr  getnex
+          bcc  -
+
+oeb:      lda  #0              ; add $00 to filename
+          sta  filename,y
+          jsr  correctfilename ; add "[drv-char]>" if neccessary
+          ldx  fnadr           
+          ldy  fnadr+1
+          jsr  getdrvpage      ; prepare for pload
+          bcs  +
+          jsr  pload           ; pload command
+          bcc  moregogo
+          bcs  +               ; error ?, then print errormessage
+
+searched: jsr  getnex
+          bcc  searched
+          jmp  oeb
+
+erroroutmin:
+          ldx  lopip
+          cpx  stdout_ch
+          beq  +
+          jsr  pclose          ; close com's stdin channel
+          cli                  ; if it is a new opened channel
+        + jmp  toerrrout
+
+moregogo: pha                  ; remember MID of loaded file
+          jsr  makparampage    ; create parameter page
+          jsr  getakt
+          ldx  stdout_ch
+          cmp  #0
+          beq  +               ; piped commands ?, not then skip opening
+
+          lda  #$80            ; an other pipe to connect them
+          jsr  popen
+          cli
+
+        + pla                  ; get MID
+          stx  lipip           ; remember com's stdout channel
+          tax
+          ldy  #0
+          jsr  setsup          ; set com's >_base
+          iny
+          lda  lopip
+          jsr  setsup          ; set com's stdin
+          iny
+          lda  lipip
+          sta  lopip           ; (output to 2nd is input from 1st)
+          jsr  setsup          ; set com's stdout
+          iny
+          lda  stderr_ch
+          jsr  setsup          ; set com's stderr (equal to our stderr)
+          lda  #4
+          jsr  init_process    ; activate process with priority 4
+          bcs  erroroutmin
+
+          ldx  stat            ; rember PID of new process
+          sta  pfpage,x
+          tya
+          inx
+          sta  pfpage,x
+          inx
+          stx  stat            ; ( stat+=2 )
+
+          bit  bflag           ; if not "&", then skip message
+          bpl  +
+
+          inc  cp_cnt          ; print " [nn]  PID\n"
+          lda  cp_cnt
+          sta  hlp
+          lda  #0
+          sta  hlp+1
+          lda  #91
+          jsr  putc
+          jsr  decout
+          lda  #93
+          jsr  putc
+          lda  #32
+          jsr  putc
+          ldy  cp_cnt
+          ldx  stat
+          lda  pfpage-2,x
+          sta  hlp
+          sta  cp_pid_lo,y
+          lda  pfpage-1,x
+          sta  hlp+1
+          sta  cp_pid_hi,y
+          jsr  decout
+          lda  #13
+          jsr  putc
+
+        + lda  #0
+          bit  stopflg
+          bmi  toerrrout       ; stop, if there was a userbreak
+          jsr  getakt
+          beq  +               ; skip, if this is the last command
+          cmp  #"!"
+          bne  syntax_error
+          jsr  getnex
+          beq  syntax_error
+          bcc  syntax_error
+          jmp  next_com        ; process next command
+
+syntax_error:
+          lda  #11
+          jmp  toerrrout
+
+        + pla                  ; get "&"-flag
+          beq  skipwait        ; set, then don't wait for completion
+          pha
+
+waitfortermempf:
+          jsr  break           ; wait till the first process is done
+          lda  pfpage
+          ldy  pfpage+1
+          jsr  getipid         ; try to get IPID (check if process is sill
+          cli                  ; alive)
+          bcs  rdywaitempf
+
+waitfortermempf2:
+          ldx  stdin_ch        ; try to get char from stdin
+          jsr  pipe_chk
+          bcs  endwait
+          beq  waitfortermempf ; nothing to pass through, then 'break'
+          ldx  stdin_ch
+          jsr  pgetc
+          bcs  endwait
+;         sei
+          sta  _hl
+          pla
+          pha
+          tax
+          lda  _hl
+          jsr  pputc           ; and pass it to first command
+          cli
+          bcc  waitfortermempf2
+
+rdywaitempf:                   ; if first process is done, wait for the
+          jsr  break           ; others to finish
+          ldx  stdout_ch
+          jsr  pipe_chk
+          bcs  endwait
+          bne  rdywaitempf
+          ldx  stat
+          dex
+          lda  pfpage,x
+          tay
+          dex
+          lda  pfpage,x
+          jsr  getipid         ; does last process run ?
+          cli
+          bcc  rdywaitempf
+
+endwait:  lda  #0
+          sta  stat2
+          jmp  close_reprompt
+
+skipwait: jmp  start
+          
+toerrrout:
+          pha
+          sei
+          ldx  stat            ; kill all started processes
+          beq  killedrdy
+          dex
+          lda  pfpage,x
+          tay
+          dex
+          lda  pfpage,x
+          stx  stat
+          jsr  getipid
+          bcs  toerrrout+1
+          jsr  kill
+          jmp  toerrrout+1
+
+killedrdy:
+          ldx  stderr_ch       ; print error message
+          jsr  strout
+          bit  kiltext
+          pla
+          pha
+          lsr  a
+          lsr  a
+          lsr  a
+          lsr  a
+          tax
+          lda  hextab,x
+          jsr  putc_err
+          pla
+          and  #15
+          tax
+          lda  hextab,x
+          jsr  putc_err
+          lda  #13
+          jsr  putc_err
+          jmp  close_reprompt  ; and return to prompt
+          
+sendstop: txa
+          pha
+          tya
+          pha
+          lda  #0
+          sta  stat2
+
+        - ldx  stat2           ; sent signal 6 to all started processes
+          cpx  stat            ; (6 = userbreak)
+          beq  +
+          lda  pfpage+1,x
+          tay
+          lda  pfpage,x
+          inx
+          inx
+          stx  stat2
+          jsr  getipid         ; get PID from IPID
+          bcs  -
+          ldx  #6
+          jsr  send_signal     ; send signal...
+          jmp  -
+
+        + pla
+          tay
+          pla
+          tax
+          lda  #255
+          sta  stat2
+          pla
+          rti
+          
+          .data
+          
+kiltext:  .asc  "exec-skiped/error $\0"
+
+hextab:   .asc  "0123456789ABCDEF"
+          
+          .code
+
+          ;  getakt
+          ;  getnex
+          ;  jsr$<intbef
+          ;  jsr$<correctfilename
+          ;  jsr$<makparampage
+          ;  .byte $2c
+          ;  <fnadr
+          ;  .word <filename
+
+intbef:   ldy  #0
+          sty  exptr
+          jsr  nexnex
+
+        - bcs  trenn
+          cmp  beftab,y
+          bne  noint
+          iny
+          jsr  getnex
+          jmp  -
+
+noint:    lda  #0
+          sta  xflag
+          sta  exptr
+          sec
+
+        - rts
+
+trenn:    lda  beftab,y
+          bne  noint
+
+          sei
+          lda  cp_cnt
+          beq  +               ; alone on stdout or 2nd try, then exit
+          bit  xflag
+          bmi  +
+          lda  #128
+          sta  xflag
+          ldx  stdout_ch
+          jsr  strout          ; "you have running jobs"
+          bit  txt0
+          bcc  -
+
+        + jmp  panic
+          
+correctfilename:
+          ldx  fnadr
+          ldy  fnadr+1
+          jsr  getdrvpage      ; a path included ?
+          bcc  setpath         ; if yes, then remember this path
+          ldx  #13
+
+        - lda  filename,x      ; else add path in front of filename
+          sta  filename+2,x
+          dex
+          bpl  -
+
+          lda  path
+          sta  filename
+          lda  #58
+          sta  filename+1
+          rts
+
+setpath:  lda  filename
+          sta  path
+          rts
+          
+        - tsx
+          lda  $103,x
+          tax
+          lda  #0
+          ldy  #8
+          jmp  setsup          ; no parameter page
+
+makparampage:
+          jsr  nexnex
+          beq  -               ; no parameters, then skip
+          cmp  #"!"
+          beq  -
+          lda  #1
+          jsr  malloc          ; allocate page for parameter
+          tay
+          tsx
+          lda  $103,x          ; read MID from stack
+          tax
+          tya
+          ldy  #8
+          jsr  setsup          ; set MID of parameter page
+          sei
+          sta  _hl+1
+          ldy  #0
+          sty  _hl
+          lda  #0
+          sta  (_hl),y
+          iny
+
+        - jsr  nexnex
+          bcs  +
+
+        - cmp  #"!"
+          beq  +
+          cmp  #13
+          beq  +
+          sta  (_hl),y
+          iny
+          jsr  getnex
+          bcc  -
+
+          beq  +
+
+          lda  #32
+          sta  (_hl),y
+          iny
+          jmp  --
+
+        + lda  #0
+          sta  (_hl),y
+          rts
+
+decout:
+          ldx  #4
+          ldy  #0
+
+        - sec
+          lda  hlp
+          sbc  d_tab_lo,x
+          lda  hlp+1
+          sbc  d_tab_hi,x
+          bcc  +
+
+          sta  hlp+1
+          lda  hlp
+          sbc  d_tab_lo,x
+          sta  hlp
+          iny
+          jmp  -
+
+        + tya
+          beq  +
+          ora  #"0"
+          jsr  putc
+          ldy  #"0"
+
+        + dex
+          bne  -
+          lda  hlp
+          ora  #"0"
+          jmp  putc
+
+
+scan_childs:
+
+          lda  cp_cnt
+          beq  +
+
+          lda  #0 
+          sta  hlp2
+          sta  hlp2+1
+
+        - ldx  hlp2
+          ldy  cp_pid_hi+1,x
+          sty  hlp+1
+          lda  cp_pid_lo+1,x
+          sta  hlp
+          jsr  getipid
+          cli
+          bcs  ++
+
+          ldx  hlp2+1
+          lda  hlp
+          sta  cp_pid_lo+1,x
+          lda  hlp+1
+          sta  cp_pid_hi+1,x
+          inx
+          stx  hlp2+1
+
+        - inc  hlp2
+          lda  hlp2
+          cmp  cp_cnt
+          bcc  --
+
+          lda  hlp2+1
+          sta  cp_cnt
+        + rts
+
+        + ldx  stdout_ch
+          jsr  strout
+          bit  txt_done
+          jsr  decout
+          lda  #13
+          jsr  putc
+          jmp  -
+
+;
+; history stuff
+;
+
+up_hist:
+          ldx  hist_rd
+          lda  histbuf,x
+          cmp  #1
+          beq  +
+
+        - dex
+          lda  histbuf,x
+          beq  ++
+          cmp  #1
+          bne  -
+
+        + jmp  in_loop         ; found $01, then skip (end of buffer)
+
+        + stx  hist_rd
+
+          ; replace line
+
+hist_update:
+
+          ldx  pflen           ; remove current string
+          beq  +
+
+        - lda  #157            ; csr-left
+          jsr  putc
+          lda  #32             ; space
+          jsr  putc
+          lda  #157            ; csr-left
+          jsr  putc
+          dex
+          bne  -
+
+        + ldy  #0
+          ldx  hist_rd
+          cpx  hist_wr
+          beq  +
+
+        - inx
+          lda  histbuf,x
+          beq  +
+          sta  pfpage,y
+          jsr  putc
+          iny
+          bne  -
+
+        + sty  pflen
+          
+        - jmp  in_loop
+
+down_hist:
+
+          ldx  hist_rd
+          cpx  hist_wr
+          beq  -               ; end reached, then skip
+
+        - inx
+          lda  histbuf,x
+          bne  -
+
+          stx  hist_rd
+          jmp  hist_update
+
+add_hist:
+          ldx  hist_wr
+          inx
+          lda  pflen
+          beq  +++
+          ldy  #0
+
+        - lda  pfpage,y
+          beq  +
+          sta  histbuf,x
+          inx
+          iny
+          cpy  pflen
+          bne  -
+
+        + lda  #0
+          sta  histbuf,x
+          stx  hist_wr
+
+        - inx
+          lda  histbuf,x
+          beq  +
+          cmp  #1
+          bne  -
+
+        + lda  #1
+          sta  histbuf,x
+        + rts
+
+          .endofcode
+
+filename: .buf 18
+          .byte 0
+
+d_tab_lo: .byte <1, <10, <100, <1000, <10000
+d_tab_hi: .byte >1, >10, >100, >1000, >10000
+          
+beftab:   .asc  "exit\0"
+
+txt0:     .asc  "you have running jobs\n\0"
+
+txt_done: .asc  "done \0"
+
+txt_welcome:
+          .asc  "LUnix Shell Version 2.0 (30.12.1996)\n\0"
+          
+cp_pid_lo:   .buf  32 ; table of PIDs of child processes (up to 32)
+cp_pid_hi:   .buf  32
+
+pflen:    .buf 1   ; number of chars in commandline-buffer
+stopflg:  .buf 1   ; userbreak-flag
+exptr:    .buf 1   ; read-pointer into commandline-buffer
+stat2:    .buf 1
+len:      .buf 1
+stat:     .buf 1   ; counts activated processes (num*2)
+lopip:    .buf 1   ; command's stdin channel
+lipip:    .buf 1   ; command's stdout channel
+path:     .buf 1
+xflag:    .buf 1   ; exit-flag, set with "you have runnig..." message
+
+cp_cnt:   .buf 1   ; counts child processes
+hlp:      .buf 2   ; hold integer (for decout)
+hlp2:     .buf 2   
+bflag:    .buf 1   ; set, if background process
+
+hist_wr:  .buf 1   ; pointer into history-buffer (write)
+hist_rd:  .buf 1   ;            ''               (read)
+
+.newpage
+
+histbuf:  .buf  256
+pfpage:   .buf  256
+

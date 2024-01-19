@@ -1,0 +1,785 @@
+;***********************************************************
+; source code of the file named "init.exe" in LUnix V0.1
+;
+; init is the first process. init does the screen management
+;
+; converted to luna format Nov 9 1996 by poldi
+;  (also made some minor corrections)
+;***********************************************************
+
+.header "console" , p1l,p1h,p2l,p2h
+
+
+          hl  equ 4
+          hh  equ 5
+
+          break   equ $9012
+          pipout  equ $902d
+          pipin   equ $902a
+          getipid equ $9060
+          pipechk equ $906f
+          
+          ;  first console.exe prozess code
+          ;    output to screen 24x40
+          ;    input from keyboard
+          ;      using the old irq
+          
+.data
+          xp1:      .byte 0
+          yp1:      .byte 0
+          hide1:    .byte 0
+          xp2:      .byte 0
+          yp2:      .byte 0
+          hide2:    .byte 0
+          stat:     .byte 0
+          flag:     .byte 0
+          inpipe1:  .byte 0
+          outpipe1: .byte 0
+          inpipe2:  .byte 0
+          outpipe2: .byte 0
+          pid1lo:   .byte 0
+          pid1hi:   .byte 0
+          pid2lo:   .byte 0
+          pid2hi:   .byte 0
+
+.code
+
+_init:    ;ldx  ptr
+          ;lda  #251           ; seems to be very very old code
+          ;sta  $c060,x
+          ;lda  #4
+          ;sta  $c080,x
+
+          lda  #$42
+          sta  808
+          lda  #$eb
+          sta  809             ; no run/stop (CBM-patch.. :)
+
+          lda  #0
+          ;sta  _base+7          ; also obsolete!
+          ;sta  _base+6
+          ;sta  _base+5
+          ;sta  _base+4
+          sta  stat
+          sta  p2h
+          sta  p1h
+          sei
+          lda  $c268
+          and  #$41
+          beq  ++              ; check if keyboard/screen is available
+
+          ldx  #0
+        - lda  txtend,x
+          beq  +
+          jsr  $906c
+          inx
+          bne  -
+        + rts
+
+          ; out1, out2, keyin, clr1, clr2
+          ; setcol1, setcol2
+
+        + ldx  #1
+          jsr  $903f
+          ldx  #7
+          jsr  $903f           ; lock keyboard and screen
+
+          lda  #12             ; change colors
+          sta  53281
+          lda  #0
+          sta  53280
+
+          jsr  clr1            ; clear both screens
+          jsr  clr2
+
+          ldx  #39             ; draw line and help bar
+        - lda  #"-"
+          sta  1464,x
+          lda  #11
+          sta  5736,x
+          lda  txt.line,x
+          sta  1984,x
+          lda  #1
+          sta  56256,x
+          dex
+          bpl  -
+
+main_loop:
+          jsr  keyin
+          cmp  #0
+          bne  +
+          sta  flag
+
+          bit  stat
+          bvc  no1st
+          ldx  inpipe1
+          jsr  pipechk
+          bcs  ++
+          beq  no1st
+          ldx  inpipe1
+          jsr  pipin
+          bcs  ++
+          jsr  out1
+          inc  flag
+          jmp  no1st
+
+        + jmp  gotakey
+
+        + ldx  inpipe1         ; kill shell in window 1 (i/o error)
+          jsr  $9027
+          ldx  outpipe1
+          jsr  $9027
+          lda  #0
+          sta  p1h
+          jsr  clr1
+          lda  stat
+          and  #$80
+          bpl  +
+          ora  #2
+        + sta  stat            ; switch to 2nd window if possible
+          bpl  no1st
+          lda  #15
+          jsr  setcol2
+
+no1st:    bit  stat
+          bpl  main_end
+
+          ldx  inpipe2
+          jsr  pipechk
+          bcs  +
+          beq  main_end
+          ldx  inpipe2
+          jsr  pipin
+          bcs  +
+          jsr  out2
+          inc  flag
+main_end:
+          cli
+          lda  flag
+          bne  main_loop
+          jsr  break           ; nothing to do so have a break
+          jmp  main_loop
+
+        + ldx  inpipe2         ; kill shell in window 2 (i/o error)
+          jsr  $9027
+          ldx  outpipe2
+          jsr  $9027
+          lda  #0
+          sta  p2h
+          jsr  clr2
+          lda  stat            ; switch to window 1 if possible
+          and  #$40
+          beq  +
+          ora  #1
+        + sta  stat
+          and  #$40
+          beq  main_end
+          lda  #15
+          jsr  setcol1
+          jmp  main_end
+
+sendstop: lda  stat
+          and  #3
+          beq  +++
+          cmp  #1
+          beq  +
+          lda  pid2lo          ; send stop to win2
+          ldy  pid2hi
+          jmp  ++
+
+        + lda  pid1lo          ; send stop to win1
+          ldy  pid1hi
+
+        + jsr  getipid
+          bcs  +
+          txa
+          ldx  #6              ; send signal 6 ("user break")
+          jsr  $904b
+        + cli
+          jmp  main_loop
+
+gotakey:  cmp  #3
+          beq  sendstop
+
+          cmp  #133
+          beq  keyf1
+          cmp  #134
+          beq  keyf3
+        - jmp  main_loop
+
+keyf1:    ;  means next session
+          lda  stat
+          and  #$c0
+          beq  -
+          bpl  +
+          and  #$40
+          beq  ++
+          lda  stat
+          eor  #3
+          sta  stat
+          and  #3
+          cmp  #1
+          beq  +
+          cmp  #2
+          beq  ++
+          lda  stat
+          and  #$c0
+          ora  #1
+          sta  stat
+
+        + lda  stat            ; switch to window 1
+          and  #$c0
+          ora  #1
+          sta  stat
+          lda  #15
+          jsr  setcol1
+          lda  #11
+          jsr  setcol2
+        - jmp  main_loop
+
+        + lda  stat            ; switch to window 2
+          and  #$c0
+          ora  #2
+          sta  stat
+          lda  #15
+          jsr  setcol2
+          lda  #11
+          jsr  setcol1
+          jmp  main_loop
+
+keyf3:    lda  stat            ; means add session
+          and  #$c0
+          cmp  #$c0
+          beq  -
+          lda  $c2b0           ; (dirty hack, choose boot-driver)
+          ldx  txtptr          ; string "sh0.exe\n"
+          ldy  txtptr+1
+          jsr  $9063           ; pload
+          bcs  -
+          sta  flag
+          lda  #$80
+          jsr  $9021           ; open pipe
+          txa
+          pha
+          lda  #$40
+          jsr  $9021           ; open pipe
+          pla
+          bit  stat
+          bpl  +
+          stx  outpipe1
+          sta  inpipe1
+          jmp  overset
+
+        + stx  outpipe2
+          sta  inpipe2
+
+overset:  pha
+          txa
+          ldy  #1
+          ldx  flag
+          jsr  $9048           ; setsup (stdin-channel)
+          iny
+          pla
+          nop
+          jsr  $9048           ; setsup (stdout-channel)
+          iny
+          jsr  $9048           ; setsup (=stderr-channel)
+          txa
+          ldy  #0
+          jsr  $9048           ; setsup (set new base-address)
+          ldy  #8
+          lda  #0
+          jsr  $9048           ; setsup (set parameter-page=none)
+          lda  #1
+          jsr  $9045           ; init process (priority=1)
+          bcc  +
+          lda  #255
+          tay
+        + tax
+          lda  stat
+          bpl  +
+          ora  #$40            ; bind new shell to window 1
+          sta  stat
+          stx  pid1lo
+          sty  pid1hi
+          lda  #11
+          jsr  setcol1
+          jmp  main_loop
+
+        + ora  #$80            ; bind new shell to window 2
+          sta  stat
+          stx  pid2lo
+          sty  pid2hi
+          lda  #11
+          jsr  setcol2
+          jmp  main_loop
+
+          .byte $2c
+txtptr:   .byte <shell_name
+          .byte >shell_name
+
+.data
+
+txtend:   .asc "couldn't exec (#1 or #7 is locked)\n\0"
+
+txt.line: .asc "f1-next session   f3-add a session      ;"
+
+shell_name:
+          .asc "sh0.exe\0"
+
+l_91:     .byte $ff
+
+.code
+
+keyin:    sei
+          ldx  l_91
+          lda  $91
+          sta  l_91
+          bmi  +
+          txa
+          bpl  +
+          cli
+          lda  #3
+        - rts
+
+        + ldx  198
+          beq  key_exit+1
+          jsr  $e5b4
+          ;  zeichen aus puffer
+          cli
+          cmp  #133
+          beq  -
+          cmp  #134
+          beq  -
+          pha
+          lda  stat
+          and  #3
+          beq  key_exit
+          cmp  #2
+          beq  +
+          ldx  outpipe1
+          jmp  ++
+
+        + ldx  outpipe2
+        + sei
+          beq  key_exit
+          lda  $c600,x
+          beq  key_exit
+          sta  hh
+          lda  $c500,x
+          sta  hl
+          ldy  #1
+          lda  (hl),y
+          and  #$20
+          bne  key_exit
+          pla
+          jsr  pipout
+          cli
+          .byte $24
+
+key_exit: pla
+          lda  #0
+          rts
+          
+setcol1:  ldy  #0
+          sei
+        - sta  55296,y
+          sta  55480,y
+          iny
+          bne  -
+          cli
+          rts
+          
+setcol2:  ldy  #0
+          sei
+        - sta  55776,y
+          sta  56000,y
+          iny
+          bne  -
+          cli
+          rts
+          
+clr1:     lda  #32
+          sei
+          ldy  #0
+        - sta  1024,y
+          sta  1208,y
+          iny
+          bne  -
+          cli
+          rts
+          
+clr2:     lda  #32
+          sei
+        - sta  1504,y
+          sta  1728,y
+          iny
+          bne  -
+          cli
+          rts
+          
+;-----------------------window 1-----------------------
+
+w1_makclr:
+          jsr  clr1
+w1_makhome:
+          lda  #0
+          sta  p1h
+          rts
+
+        - jmp  w1_makret
+
+out1:     ldx  p1h
+          bne  +
+
+          pha
+          lda  #0
+          sta  xp1
+          sta  yp1
+          sta  p1l
+          lda  #4
+          sta  p1h
+          ldy  #0
+          lda  (p1l),y
+          sta  hide1
+          lda  #100
+          sta  (p1l),y
+          pla
+
+        + cmp  #32             ; ascii to petscii
+          bcc  ++
+          cmp  #64
+          bcc  +++++           ; skip conversion
+          cmp  #96
+          bcc  +++             ; subtract 64
+          cmp  #128
+          bcc  ++++            ; subtract 32
+          and  #127
+          cmp  #32
+          bcc  +
+          cmp  #96
+          bcc  +++++           ; skip conversion
+        + ora  #128
+        + tax
+          ldy  #0
+          lda  hide1
+          sta  (p1l),y
+          cpx  #147
+          beq  w1_makclr
+          cpx  #19
+          beq  w1_makhome
+          cpx  #29
+          beq  w1_makright
+          cpx  #157
+          beq  w1_makleft
+          cpx  #17
+          beq  w1_makdown
+          cpx  #145
+          beq  w1_makup
+          cpx  #13
+          beq  w1_makcr
+          cpx  #10
+          beq  -
+          jmp  w1_setcsr
+
+        + sbc  #32             ; -64
+        + sbc  #31             ; -32
+        + sta  hide1           ; +/- 0
+
+w1_makright:
+          ldx  xp1
+          cpx  #39
+          beq  +
+          inx
+          stx  xp1
+          lda  hide1
+          ldy  #0
+          sta  (p1l),y
+          inc  p1l
+          bne  w1_setcsr
+          inc  p1h
+
+w1_setcsr: ldy  #0
+          lda  (p1l),y
+          sta  hide1
+          lda  #100
+          sta  (p1l),y
+        + rts
+
+w1_makleft:
+          ldx  xp1
+          beq  w1_setcsr
+          dex
+          stx  xp1
+          lda  p1l
+          bne  +
+          dec  p1h
+        + dec  p1l
+          jmp  w1_setcsr
+
+w1_makup:
+          ldx  yp1
+          beq  w1_setcsr
+          dex
+          stx  yp1
+          sec
+          lda  p1l
+          sbc  #40
+          sta  p1l
+          bcs  w1_setcsr
+          dec  p1h
+          jmp  w1_setcsr
+
+w1_makdown:
+          ldx  yp1
+          cpx  #10
+          beq  +
+          inx
+          stx  yp1
+          clc
+          lda  p1l
+          adc  #40
+          sta  p1l
+          bcc  w1_setcsr
+          inc  p1h
+          jmp  w1_setcsr
+
+        + jsr  w1_movup
+          jmp  w1_setcsr
+
+w1_makcr:
+          ldx  yp1
+          cpx  #10
+          beq  ++              ; last line, then scroll
+          inx
+          stx  yp1
+          clc
+          lda  p1l
+          adc  #40
+          sta  p1l
+          bcc  w1_makret
+          inc  p1h
+
+w1_makret:
+          sec
+          lda  p1l
+          sbc  xp1
+          sta  p1l
+          bcs  +
+          dec  p1h
+        + sty  xp1
+          jmp  w1_setcsr
+
+        + jsr  w1_movup
+          ldy  #0
+          jmp  w1_makret
+
+w1_movup:
+          sei
+          ldy  #0
+        - lda  1064,y
+          sta  1024,y
+          iny
+          bne  -
+        - lda  $528,y
+          sta  $500,y
+          iny
+          cpy  #144
+          bne  -
+          lda  #32
+          ldx  #39
+        - sta  1424,x
+          dex
+          bpl  -
+          cli
+          rts
+          
+;------------------------window 2--------------------------
+
+w2_makclr:
+          jsr  clr2
+w2_makhome:
+          lda  #0
+          sta  p2h
+          rts
+
+        - jmp  w2_makret
+
+out2:     ldx  p2h
+          bne  +
+
+          pha
+          lda  #0
+          sta  xp2
+          sta  yp2
+          lda  #224
+          sta  p2l
+          lda  #5
+          sta  p2h
+          ldy  #0
+          lda  (p2l),y
+          sta  hide2
+          lda  #100
+          sta  (p2l),y
+          pla
+
+        + cmp  #32             ; ascii to petscii
+          bcc  ++
+          cmp  #64
+          bcc  +++++           ; skip conversion
+          cmp  #96
+          bcc  +++             ; subtract 64
+          cmp  #128
+          bcc  ++++            ; subtract 32
+          and  #127
+          cmp  #32
+          bcc  +
+          cmp  #96
+          bcc  +++++           ; skip conversion
+        + ora  #128
+        + tax
+          ldy  #0
+          lda  hide2
+          sta  (p2l),y
+          cpx  #147
+          beq  w2_makclr
+          cpx  #19
+          beq  w2_makhome
+          cpx  #29
+          beq  w2_makright
+          cpx  #157
+          beq  w2_makleft
+          cpx  #17
+          beq  w2_makdown
+          cpx  #145
+          beq  w2_makup
+          cpx  #13
+          beq  w2_makcr
+          cpx  #10
+          beq  -
+          jmp  w2_setcsr
+
+        + sbc  #32             ; -64
+        + sbc  #31             ; -32
+        + sta  hide2           ; +/- 0
+
+w2_makright:
+          ldx  xp2
+          cpx  #39
+          beq  +
+          inx
+          stx  xp2
+          lda  hide2
+          ldy  #0
+          sta  (p2l),y
+          inc  p2l
+          bne  w2_setcsr
+          inc  p2h
+
+w2_setcsr: ldy  #0
+          lda  (p2l),y
+          sta  hide2
+          lda  #100
+          sta  (p2l),y
+        + rts
+
+w2_makleft:
+          ldx  xp2
+          beq  w2_setcsr
+          dex
+          stx  xp2
+          lda  p2l
+          bne  +
+          dec  p2h
+        + dec  p2l
+          jmp  w2_setcsr
+
+w2_makup:
+          ldx  yp2
+          beq  w2_setcsr
+          dex
+          stx  yp2
+          sec
+          lda  p2l
+          sbc  #40
+          sta  p2l
+          bcs  w2_setcsr
+          dec  p2h
+          jmp  w2_setcsr
+
+w2_makdown:
+          ldx  yp2
+          cpx  #11
+          beq  +
+          inx
+          stx  yp2
+          clc
+          lda  p2l
+          adc  #40
+          sta  p2l
+          bcc  w2_setcsr
+          inc  p2h
+          jmp  w2_setcsr
+
+        + jsr  w2_movup
+          jmp  w2_setcsr
+
+w2_makcr:
+          ldx  yp2
+          cpx  #11
+          beq  ++              ; last line, then scroll
+          inx
+          stx  yp2
+          clc
+          lda  p2l
+          adc  #40
+          sta  p2l
+          bcc  w2_makret
+          inc  p2h
+
+w2_makret:
+          sec
+          lda  p2l
+          sbc  xp2
+          sta  p2l
+          bcs  +
+          dec  p2h
+        + sty  xp2
+          jmp  w2_setcsr
+
+        + jsr  w2_movup
+          ldy  #0
+          jmp  w2_makret
+
+w2_movup:
+          sei
+          ldy  #0
+        - lda  1544,y
+          sta  1504,y
+          iny
+          bne  -
+        - lda  1800,y
+          sta  1760,y
+          iny
+          cpy  #184
+          bne  -
+          lda  #32
+          ldx  #39
+        - sta  1944,x
+          dex
+          bpl  -
+          cli
+          rts
+          
+.endofcode
+
+
+
+
+
+
+
+
+
+
+

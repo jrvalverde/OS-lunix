@@ -1,0 +1,110 @@
+   Hi,
+
+  I enclosed a little utility to speed the 1541 a little bit. More 
+information can be found in my web page:
+http://newton.physics.metu.edu.tr/~filker/cbm.html
+
+see you, 
+
+Ilker,
+
+-------------cut here for the documentation--------
+
+
+
+FASTHEAD: DISK UTILITY TO SPEED UP THE TRACK SWEEPING
+-----------------------------------------------------
+
+   The "fasthead" basic program is responsible to prepare "&fasthead" 
+USR file in the disk. After execution, it will read the data statements
+and prepare the utility command with additional information.
+
+   If the "&fasthead" file is successfully written, you can use it with 
+several methods and from the all available CBM OSs.
+
+with C64 basic v2.0  : open1,8,15,"&fasthead":close1
+
+with a dos wedge     : @&fasthead
+
+from the LUnix       : disk &fasthead
+
+from the ACE         : @ &fasthead
+
+   Besides the above methods, you can execute it from a program's "sending
+disk command" option. Also note to use it with C1571, it has to be in the
+C1541 emulation mode, otherwise you get error.
+
+   It's very simple but effective, especially if you have too much files 
+in a disk.
+
+   Also you can put necassary command into the .initrc file of LUnix or ACE
+to make your life even easier. For example if you are using LUnix, you can
+enter the following lines into the .initrc file:
+
+      first load and run the ed command from the command line shell:
+ 
+      @>ed
+
+      then at the ':' prompt enter the file name by 'f' command
+
+      :f .initrc
+
+      now you can enter the necassary lines into that file:
+
+      :i
+
+      from now on you are in the text entry mode of ED. 
+      so type the following as an example:
+
+      #!@:sh0.exe
+      disk &fasthead
+      cbmkeyb ! sh0.exe
+
+      and by entering a single dot '.' exit from this mode:
+
+      .
+
+      now you are in the command mode again, 
+      so type 'x' to write the file exit to command shell:
+
+      :x
+
+        From now on whenever you load the LUnix '&fasthead' will be active
+      automatically. Of course if you installed new init.exe .
+
+   
+by: Ilker Ficicilar - filker@newton.physics.metu.edu.tr
+
+---------end of documentation-------
+
+----------cut here for the uuencoded fasthead basic installer-----
+begin 644 fasthead
+M 0@K" $ CR @(" @1D%35$A%040@15A!35!,12!&3U(@(" @(" @(" @+@!W
+M" ( CR @(" @(" @(%1(12!54T%'12!/1B @(" @(" @(" @(" @(" @(" @
+M(%5424Q)5%D@3$]!1$52($-/34U!3D0@*"<F)RD R0@# (\@(" @(" @(" @
+M(" @(" @(" @(" @(" @(" @(" @(" @(" @(" @(" @(" @(" @(" @(" @
+M(" @(" @(" @(" @(" @(" @(" N /,(! "/(" @(" @(" @(%9%4E-)3TX@
+M,2XP(" @(" @(" @(" @(" N $4)!0"/(" @(" @($)9($E,2T52($9)0TE#
+M24Q!4B @(" @(" @(" @(" @(" @(" @(" @(" @(" @(" @(" @(" @(" @
+M(" @(" @(" @+@"7"08 CR @(" @5$\@15A%0U5412!42$4@0T]-34%.1" @
+M(" @(" @(" @(" @(" @($I54U0@5%E012!/3D4@3T8@5$A%4T4@(" @(" @
+M("X Z0D' (\@(" @(" @(" @(" @(" @(" @(" @(" @(" @(" @(" @(" @
+M(" @("!/4$5.,34L."PQ-2PB)D9!4U1(14%$(CI#3$]313$U(" N #L*" "/
+M(" @(" @(" @(" @(" @(" @(" @(" @(" @(" @(" @(" @(" @(" @0"9&
+M05-42$5!1" N+BY!5"!42$4@1$]3(%!23TU05" @+@"-"@D CR @(" @(" @
+M(" @(" @(" @(" @(" @(" @(" @(" @(" @(" @("!$25-+("9&05-42$5!
+M1" N+D9/4B!,54Y)6"!!3D0@04-%("X QPH* )DZF2)74DE424Y'(%1(12!5
+M5$E,2519($-/1$4B.IDB5$\@5$A%($-54E)%3E0@1%))5D4B  ,+#P!$4K+"
+M*#$X-BDZ1%*R*$12LS@IK"A$4JLX*:I$4CJ?,BQ$4BPR+"(P.B9&05-42$5!
+M1"Q5+%<B "4+% "'3$\L2$DZ0[),3ZI(23J+0[$R-36G0[)#JS(U-0 X"QX 
+MF#(LQRA,3RG'*$A)*3L 0@LH %0DLB(B %,+,@"'1#J+1+*K,:<Q,#  ; L\
+M $.R0ZI$.HM#L3(U-:=#LD.K,C4U 'L+1@!4)+)4)*K'*$0I (,+4 ")-3  
+MCPMD $RRPRA4)"D J MN $.R0ZI,.HM#L3(U-:=#LD.K,C4U +L+> "8,BS'
+M*$PI5"3'*$,I.P#""X( H#( R N, (  YPO( (,P+#,ZCR!,3R](22!35$%2
+M5"!!1$1215-3  0,T@"/(" @+2TM(%!23T=204T@0T]$12 M+2T ' S< (,Q
+M-CDL,34L,30Q+#<L,C@L.38 ) SZ (,M,0!*#"(!CR @34%8+B!04D]'+B!,
+514Y'5$@@25,@,C4Q($)95$53    
+ 
+end
+
+---------------end of uuencoded fasthead basic file-------

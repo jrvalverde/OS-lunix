@@ -1,0 +1,373 @@
+<html>
+<head>
+<title> Comming up next ... </title>
+</head>
+<body>
+<h1>LUnix - the next generation...</h1>
+<hr>
+<h3>Aiming for a good filesystem. A RAM-Drive used as root-filesystem.
+Special-Files to enable access to device drivers. Mount/unmount filesystems,
+enable directories,subdirectories,links. Multi-sessions,screens (40/80 columns)
+Support of RS232 (improved routines using
+the CIAs serial-ports working fine up to 9600baud without a swiftlink)
+maybe SLIP + a minimal IP/TCP support. But i'm some kind of uncertain, too
+many ideas but less time :-)</h3>
+<hr>
+realized so far :
+<plaintext>
+$9000 - MakeFlowTab
+	Creates the process flow-table for the system IRQ.
+	I very similar to the old version.
+
+	But the maximum span of time that a process can work without
+	swapping to an other process is now 31 * 1/64 sec.
+
+$9006 - SendSig.raw
+	The 'raw' sendsignal routine (used only by the system itself or
+	drivers)
+	< (4)=#SigNr X=PID
+	> cc + A=$00 means OK
+	  cc + A=$FF means dismiss (signal couldn't be sent)
+	      (maybe the process doesn't catch such a signal or
+	      the process' own stack it full)
+	  cs + A=#ErrNr means an error
+
+$9009 * Block
+	A process can block itself using this call.
+	This is used mainly by system-routines eg. when a process
+	tries to write into a full pipe.
+	After the process is been 'unvlocked' by eg. an other process
+	(or by the IRQ-routine -> wake up after sleep)
+	< A/Y=WaitState
+
+	The defined WaitStates :
+	01 xx - pipe #ch=xx is full
+	02 xx - pipe #ch=xx is empty
+	03 00 - no #ch free
+	04 00 - not enough memory
+	05 00 - process table is full
+	06    -
+	07 xx - wait for exitcode of IPID=xx
+	08 xx - semaphore #nr=xx is locked
+	09    -
+	0A xx - process is sleeping
+	0B xx - process has reached a breakpoint (c below)
+
+	An example:
+
+  try:	jsr  TryToAllocateMem
+	bcc  okay
+
+	lda  04
+	ldy  00
+	jsr  Block
+	jmp  try
+  okay: ....
+
+
+	Well thats a silly example because the normal
+	allocation routine does all this in any case.
+	(and even better! -> look eg. $9039 LMemBlk)
+
+	You'll need this routines only if you write new driver-code
+	or other kernel expansions.
+
+$901B * SuicErrOut
+	Suicide with error output in words.
+	makes just this :
+
+	pha	    /* save the error-code    /*
+	jsr ErrOut  /* prints a error message /*
+	pla	    /* restore the error-code /*
+	jmp Suic    /* commit suicide the normal way /*
+
+	($900C=ErrOut,$9018=Suic)
+
+	Defined errors are :
+	0    - no error
+	1-31 - same as old DOS
+	32   - no such process
+	33   * inadmissible arguments
+	34   - locked semaphore
+	35   * stack overflow
+	36   - can't hook into IRQ/NMI/Alert
+	37   * 'BIT $Adr.' expected
+	38   * page fault
+	39   * access to a foreign process
+	40   - can't access channel-table
+
+	     *<- one of those errors will terminate the
+		 active process.
+
+$901E - MUnblk
+	Multiple-Unblock
+	Will wake up all process with a certain WaitState
+	< (C262)/(C263)=WaitState
+
+	Again this is only used by the system itself or very system near code
+	(like drivers).Don't ever call it without making 'se i' before !!
+
+$9021 - MPAlloc
+	Multiple-page-allocation
+	use it to allocate to allocate more than one page (in a row -> in one
+	big piece)
+	< X=OccCode,A=NumOfPages
+	> cs means that there was not enough memory
+	  cc + A=MID
+	MID=memory identification
+	is identical with the first page of the allocated area
+	OccCode=occupation code (normal this should be the IPID)
+
+	Example:Allocate a piece of memory without using the higher level call
+
+ try:	lda #10	    /* lets allocate 10 pages..	 /*
+	ldx $2	    /* (2) is the actual IPID	 /*
+	jsr MPAlloc
+	cl i	    /* the MPAlloc contains a 'se i' ! /*
+	bcc okay
+
+	jsr LMemBlk /* c the description below	 /*
+	jmp try
+
+ okay:	...
+
+$9033 - PFree
+	page-free
+	to release a allocated memory area
+	< A=MID
+
+	pfree won't wakeup other processes that are locked because of
+	less memory !
+	Because this is agin a lowlevel routine
+	a correct pfree call using only lowlevel routines would look like
+	this:
+
+	lda #MID
+	jsr PFree
+       (se i)	    /* PFree does this anyway  /*
+	lda #4
+	sta $C262
+	lda #0
+	sta $c263
+	jsr MUnblk  /* will wakeup all processes with WaitState=$04,$00 /*
+	cl i
+
+
+$9036 - SPAlloc
+	single-page-allocation
+	< X=OccCode
+	> cs means 'no free page left'
+	  cc + A=MID
+	description is the same as that from MPAlloc.
+	But SPAlloc uses an other search-method !
+	MPAlloc serches upward and SPAlloc downward.
+	and SPAlloc is much much faster then MPAlloc because
+	it doesn't search for a 'best fit' it takes just the
+	first free page.
+
+$9039 - LMemBlk
+	Less-memory-blockation
+	Set a system flag and block the actual process
+	(this system flag will force some other system-routines to
+	to be more thrifty with memory eg. all page-pipes,pipes that
+	are buffering more that 27bytes will lock as they were full so
+	that they'll shrink...)
+	The system will return to the blocked process as soon as an other
+	some other process caused a PFree.
+
+$903F * Lock
+	Used to lock a semaphore or pass a semaphore (which menas the same)
+	< X=#nr , cs-means forced
+	> (A=#nr) cs-no success
+
+	forced means that this routine will block the actual process to wait
+	till the semaphore is unlocked.
+	in unforced mode lock will return with cs in this case.
+
+	defined semaphores:
+	0     - access to the IEC-bus (used during floppy/printer actions)
+	1     - keyboard
+	2     - Joystick 1
+	3     - Joystick 2
+	...
+	8 -15 - Sprites 0-7
+	16-23 - Portbits ($DD01) 0-7
+	24    - Alarm (realtime clock of CIA A)
+	25    - IRQ job 1
+	26    - IRQ job 2
+	27    - IRQ job 3
+	28    - NMI ($DD0C)
+	...
+
+$9042 * Unlock
+	Used to unlock a semaphore.
+	< X=#nr
+
+	Unlock will do some other things too.
+	Like switching sprites off/SID voices off/remove IRQ,Alert,NMI jobs
+	depending on which semaphore you unlock.
+
+$904B * SendSig
+	Send a signal to an other process (or to yourself if you want to)
+	< A/Y=PID,X=#SigNr
+	> A=00,cc - Ok
+	  A=FF,cc - can't sent
+	  cs	  - error
+
+	Does an software-emulated interrupt of the specified process
+	to the adress stored at (baseadr.+8+3*#SigNr) this is a
+	3 byte pointer (baseadr. is the start-page of the signal reveiving
+	process)
+
+	first byte:
+	00 - the process doesn't catch this signal
+	2C - the following 2 bytes contain a relative adr.
+	     (relative to the baseadr. of the process)
+	4C - absolute adr.
+
+$9051 * AdaptPtr
+	Used to adapt all absolute-adresses in a process' code
+	This should be the first thing,that a process does.
+	< A=orginal start adress (hi-byte)
+
+	AdatpPtr will also turn the process' ability to catch signals ON.
+	(before AdaptPtr all absolute signal pointer are unadapted and a
+	signal would cause the processor jump into an abyss.
+
+$9054 * Sleep
+	Makes the actual process 'sleep' for a certain nubmer or
+	IRQs (1/64 sec.) (well sleep at least that time,but maybe longer)
+	< X/Y=duration (in 1/64 seconds)
+
+$9057 * IRQHook
+	Hook into the systems IRQ.
+	There may be up to 3 jobs that are called every 1/64s.
+
+	eg. let the border flicker for about 1 minute:
+
+	bit irqadr   /* thats the way the system gets the IRQ job's adress
+			this way you don't have to adapt the irqadr yourself,
+			AdaptAdr does it for you/*
+	jsr IRQHook  /* hooks into the system and locks
+			the semaphore #25,#26 or #27
+			to allocate either IRQ job 1,2 or 3 /*
+	ldx #0
+	ldy #15
+	jsr Sleep    /* sleep for at least 3840/64=60 seconds /*
+	ldx #25
+	jsr Unlock
+	ldx #26
+	jsr Unlock
+	ldx #27
+	jsr Unlock   /* have to (try to) unlock all these semaphores because
+			you can't be sure which job the system choosed. /*
+	...
+ irqadr:inc $D020
+	rts
+
+$905A * AlertHook
+	Works the same way as IRQHook but gives access to
+	the CIA A's alert interrupt (bit 2 of $DC0D)
+
+$905D * NMIHook
+	Again the same like the obove.
+	But this  time you have to return with
+
+	pla
+	tay
+	pla
+	tax
+	pla
+	rti
+
+	..from your NMI job.
+
+$9060 * GetIPID
+	Gets the IPID from a PID.
+	(internal process ID ranges from 0 to 31 and is the pointer into the
+	process-info tables,the PID ranges from 1..65535!)
+	Don't handle with IPIDs without disabled IRQs,because the IPID may
+	change after process swapping.
+	< A/Y=PID
+	> X=IPID,  cs-error(no such process)
+
+$9078 - DAlloc
+	descriptor allocation
+	Allocatres a 32byte field to store
+	eg. pipe-desciptors/contents
+	    file-desciptors
+	    information about #channels opened by a process
+	    ...
+	< -
+	> X=#ch,(4)/(5)=pointer to the allocated 32byte-field
+
+	There is a #ch - number abjoined to every allocated byte-field.
+
+$907B - DFree
+	set a allocated descriptor free.
+	< X=#ch
+
+
+      * <-- marks a 'high level' routine.
+	such routines will return with 'cl i'
+	and don't require a disabled IRQ.
+
+Most of the 'high level'-calls and some of the 'low level's may return with
+B
+cs (-error) and A=#ErrCode.
+I thought about a way reduce the work to catch all these errors.
+
+You can catch a error by a following
+
+	    bcs catcherror
+	    ...
+
+ catcherror:...
+
+or now easier by
+
+	    nop
+
+Everytime there is an error (and that should be a rare situation :)
+the system look if the call is followed by a 'nop'
+or not,if so the system will jump to $901B SuicErrOut in case of an error.
+I think that a good idea,to reduce work for programmers.
+
+An other feature i've implemented jet is the ability to use 'brk' to set
+breakpoints in your process-code,this will make it easier to search for
+bugs.
+
+Usage:
+       brk
+       @1 #Code
+
+       the raw brk followed by a #code of your choice (to sparate the
+       breakpoints if you've set more that one)
+
+       if the process reaches this brk the actual process will be blocked with
+       WaitState=$0B/#Code
+
+to continue the process just do this:
+
+       se i
+       lda #$0B
+       sta $C262
+       lda #Code
+       sta $C263
+       jsr MUnblk
+       cl i
+
+       (...in an other process of cause)
+
+
+I've also improoved the time measure routine
+it now counts the processor-clock-ticks !
+in a 5byte counter (max 12d 22h 4m 15.43sec.) .
+I've used the second timer of CIA A, so the measured time
+will be right even when the process has retarded the IRQ.
+(ok only if the retardion is less than 65milliseconds.)
+
+...to be continued
+</plaintext>
+</body>
+</html>

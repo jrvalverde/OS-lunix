@@ -1,0 +1,565 @@
+	;; 64NET/2 Driver For LUnix
+	;; (C)Copyright Paul Gardner-Stephen 1997
+
+	;; Switch assembler to LUnix mode and alloc one word in ZP
+	.header "64NETDRV",.addr
+
+	.code
+
+#include <struc.h>
+#include <kernel.h>
+#include <lunix.h>
+			
+;---------------------------------------
+#define DDR $DD03
+#define D   $DD01
+;---------------------------------------
+	;; Special lunix functions
+
+	;; Entry point after relocation
+_init:
+	;; Hook into driver table
+
+	;; Is there currently any driver?
+	lda $c2a0
+	cmp #$00
+	beq bootdriver		; Nope, so become default!
+
+	;; Look for spare driver slot
+	ldy #15
+aa:	lda $c2a0,y
+	beq found		; Found a spare slot
+	dey
+	bpl aa
+	jmp cantload		; No spare slots
+bootdriver:
+	;;  No other driver is installed, so install as @ (not 6)
+	;; Write drive designation byte
+	lda #$30
+	sta $c2a0
+	;; We are (forcibly) using slot 0
+	ldy #$00
+	jmp common
+	
+found:
+	;; Write drive designation byte 
+	lda #$36		; 64NET drive letter shall be 6
+	sta $c2a0,y
+common:	
+	ldx $02			; Read superpage
+	;; Store process superpage as driver page
+	lda $c200,x		
+	sta $c2b0,y
+	tax
+
+	;; Transfer ownership of memory to driver process
+	ldy $1000		; Only need to start from super page
+	lda #$26		; Driver process
+	;; Have to hard code this for now
+	sta $c300,y
+	sta $c301,y
+	sta $c302,y
+	sta $c303,y
+	sta $c304,y
+	sta $c305,y
+donetmo:	
+	
+	;; Pretty message
+	ldy #$00
+	whilenot("lda doobymessage,y : beq")
+	  jsr lk_stdout
+	  iny
+	wend
+
+		
+	jmp lk_suicide		; Die (but the driver lives on...)
+cantload:	
+	;; No free drive slot
+	ldx #$00
+	whilenot("lda drivetablefull,x : beq")
+	  jsr lk_stdout
+	  inx
+	wend
+	
+	jmp lk_suicide
+
+	;; Process load signal handler
+_sig.pload:
+	;; Open file
+	;;  Store filename location
+	stx addr
+	sty addr+1
+	stx ploadx
+	sty ploady
+	;; Ask 64NET for information on the file
+	;;  (fs_accel LUnix Command enquire)
+	lda #$46		; F
+	jsr SENDCHAR
+	lda #$4c		; L
+	jsr SENDCHAR
+	lda #$45		; E
+	jsr SENDCHAR
+	;; Send filename
+	ldy #$00
+voo4:	lda (addr),y
+	pha
+	jsr SENDCHAR
+	pla
+	cmp #$00
+	beq gotfnlen
+	iny
+	bne voo4
+gotfnlen:
+	;; check file header (must be $ffff)
+	jsr FASTGETCHAR
+	cmp #$ff
+	beq voo1
+voo2:	cmp #$fe
+	beq voo6
+	;; Bad format
+	;; Read remaining bytes from packet 
+	jsr FASTGETCHAR
+	jsr FASTGETCHAR
+	jsr FASTGETCHAR
+	jsr FASTGETCHAR
+	lda #$11
+	jmp dudpload
+voo6:
+	;; File not found
+	lda #$04
+	jmp dudpload
+voo1:	jsr FASTGETCHAR
+	;; Check version
+	jsr FASTGETCHAR
+	cmp #$00
+	beq voo3
+	cmp #$01
+	beq voo3
+	jsr FASTGETCHAR
+	jsr FASTGETCHAR
+	lda #$0f		; Bad command version
+	jmp dudpload
+voo3:
+	;; We will ignore the low-order version
+	jsr FASTGETCHAR
+
+	;; Get # pages required
+	jsr FASTGETCHAR
+	sta ploadsize
+	
+	;; Allocate enough memory (if possible)
+	sei
+	ldx $02		; bootdrv.drv does this!
+	jsr lk_memalloc
+	cli
+	bcc gotmem
+	;; Error! (presumably insufficient ram)
+	lda #$03		; Not enough memory
+	jmp dudpload
+gotmem:
+	;; Allocated ram
+	sta ploadmid
+
+	;; Ask 64NET for the file
+	lda #$46		; F
+	jsr SENDCHAR
+	lda #$4c		; L
+	jsr SENDCHAR
+	lda #$52		; R
+	jsr SENDCHAR
+	;; Send filename
+	lda ploadx
+	sta addr
+	lda ploady
+	sta addr+1
+	ldy #$00
+voo7:	lda (addr),y
+	pha
+	jsr SENDCHAR
+	pla
+	cmp #$00
+	beq zimble
+	iny
+	bne voo7
+
+zimble:	
+	;; Get ready to download command
+	lda ploadmid	
+	sta addr+1
+	lda #$00
+	sta addr	
+		
+	;; Load file into place
+
+	;; Figure out which is the highest page # to load
+	lda ploadmid
+	clc
+	adc ploadsize
+	sta ultpage
+
+	sei
+	
+	;; Load file
+	ldy #$00
+ll1:
+	jsr FASTGETCHAR
+	sta (addr),y
+	iny
+	bne ll1
+	inc addr+1
+	lda addr+1
+	cmp ultpage
+	bne ll1
+
+	cli
+	
+	;; Setup first 4 bytes of super page
+	lda ploadmid
+	sta addr+1
+	ldy #$00
+	;; Write super page # into super page
+	sta (addr),y
+	;; Followed by three zeros
+	tya
+	iny 
+	sta (addr),y
+	iny
+	sta (addr),y
+	iny 
+	sta (addr),y
+	
+	;; Return happily
+	lda ploadmid
+	clc
+	rts
+
+dudpload:
+	;; Pload fizzed, so report error 
+	sec
+	rts
+
+;; -------------------------------------
+	
+	;; Process killed signal handler
+_sig.prockilled:	
+	;; Do nothing for now (no fileio facilities defined)
+	rts
+	
+;---------------------------------------
+COMMON:	
+	stx XTEMP
+	jsr SETUP
+	tya
+	jsr SENDCHAR
+	lda $B7
+	jsr SENDCHAR
+	lda $B7
+	cmp #$00
+	beq NONAME
+	ldy #$00
+LL2:	lda ($BB),y
+	jsr SENDCHAR
+	iny
+	cpy $B7
+	bne LL2
+NONAME:	
+	lda $B9
+	jsr SENDCHAR
+	jmp LOOP
+;---------------------------------------
+FASTBLOCKGET:	
+	;THIS ROUTINE IS OPTIMISED FOR
+	; TRANSFERRING RAM <$D000
+	jsr FASTGETCHAR
+	sta addr
+	jsr FASTGETCHAR
+	sta addr+1
+	ldy #$00
+	lda $DD0D
+FBGL:	   ;GET 2 BYTES LOOP
+	;INFORM SERVER OF READY FOR B1
+	lda $DD0D
+	lda #$93
+	sta $DD00
+	;WAIT FOR SERVER
+	lda #$10
+FBG1:   bit $DD0D
+	beq FBG1
+	;GET BYTE
+	lda $DD01
+	sta (addr),y
+	iny
+	;INFORM SERVER READY FOR B2
+	lda $DD0D
+	lda #$97
+	sta $DD00
+	;WAIT FOR SERVER
+	lda #$10
+FBG2:	bit $DD0D
+	beq FBG2
+	;GET BYTE
+	lda $DD01
+	sta (addr),y
+	iny
+	cpy #$FE ;254
+	bne FBGL
+	lda #$93
+	sta $DD00
+	;WAIT FOR SERVER ACK END
+	lda #$10
+fbg3:	bit $DD0D
+	beq fbg3
+	jmp LOOP
+;---------------------------------------
+IDENTIFYME:	
+	;SEND MACHINE ID BYTE
+	lda #$4C     ;C64/C128/C65 Running LUnix
+	jsr SENDCHAR
+;---------------------------------------
+LOOP:	
+	jsr FASTGETCHAR
+	cmp #$F5
+	beq FASTBLOCKGET
+	cmp #$F4
+	bne L1
+	jmp FASTBLOCKSEND
+L1:	cmp #$F7
+	beq IDENTIFYME
+	cmp #$F6
+	beq REMOTECHRIN
+	cmp #$FF
+	beq TRANSFER
+	cmp #$FE
+	beq DONE
+	;; cmp #$FD
+	;; beq ASCIIZ
+	cmp #$F9
+	beq READKEYBOARD
+	cmp #$F8
+	bne LOOP
+	jmp jsrSOMEWHERE
+DONE:	
+	jsr FASTGETCHAR
+	cmp #$00
+	clc
+	beq BYEBYE
+	sec
+BYEBYE:	
+	ldx XTEMP
+	ldy YTEMP
+	rts
+;---------------------------------------
+READKEYBOARD:	
+	jsr FASTGETCHAR
+	jsr $FFE4
+	jsr SENDCHAR
+	jmp LOOP
+;---------------------------------------
+REMOTECHRIN:	
+	jsr FASTGETCHAR
+	jsr $F157
+	jsr SENDCHAR
+	jmp LOOP
+;---------------------------------------
+TRANSFER:	
+	lda #$FF
+	jsr FASTGETCHAR
+	cmp #$01
+	beq UPLOAD
+	;ASSUME NO IDIOTS
+	jmp DOWNLOAD
+;---------------------------------------
+UPLOAD:	
+	lda #$00
+	sta TEMP1
+	jsr FASTGETCHAR
+	sta NUMBYTES
+	jsr FASTGETCHAR
+	sta addr
+	jsr FASTGETCHAR
+	sta addr+1
+	ldx NUMBYTES
+	ldy #$FF
+UL1:	iny
+	dex	
+	beq DONEUL
+	jsr FASTGETCHAR
+	pha
+	lda #$34
+	sta $01
+	pla
+	sta (addr),y
+	lda #$35
+	sta $01
+	jmp UL1
+DONEUL:	
+	jmp LOOP
+;---------------------------------------
+jsrSOMEWHERE:	
+	;ALLOW 64NET TO DO A jsr
+	;INTO THE Ã64'S MEMORY
+	;; XXX This routine isnt implemented for LUnix yet
+	
+	jsr FASTGETCHAR
+	jsr FASTGETCHAR
+	jsr FASTGETCHAR
+	jsr FASTGETCHAR
+	jsr FASTGETCHAR
+	jsr FASTGETCHAR
+	jmp LOOP
+;---------------------------------------
+DOWNLOAD:	
+	jsr FASTGETCHAR
+	sta NUMBYTES
+	jsr FASTGETCHAR
+	sta addr
+	jsr FASTGETCHAR
+	sta addr+1
+	jsr FASTGETCHAR ;THIS HELPS
+	;STOP HANGS!
+	ldx NUMBYTES
+	ldy #$FF
+DL1:	iny
+	dex
+	beq DONEDL
+	lda (addr),y
+	jsr SENDCHAR
+	jmp DL1
+DONEDL:	
+	jmp LOOP
+;---------------------------------------
+SETUP:	
+	lda #$00
+	sta $DD03
+	lda #$00
+	sta $DD01
+	rts
+;---------------------------------------
+SYNC:	
+	lda #$00
+	sta DDR
+	lda $DD00
+	ora #$04
+	sta $DD00
+	rts
+;---------------------------------------
+SENDCHAR:	
+	pha
+	;SET DDR
+	lda #$FF
+	sta $DD03
+	pla	
+	sta $DD01
+	;NOTIFY SERVER BYTE TO GRAB
+	lda $DD0D
+	lda #$93
+	sta $DD00
+	;WAIT TILL SERVER GOT
+	lda #$10
+SC1:	bit $DD0D
+	beq SC1
+	;NOTIFY SERVER END OF TRANSACTION
+	lda #$97
+	sta $DD00
+	;CLEAN UP PORT
+	lda #$00
+	sta $DD03
+	;WAIT TILL SERVER DONE
+	lda #$10
+SC2:	bit $DD0D
+	beq SC2	
+	rts
+;---------------------------------------
+FASTGETCHAR:	
+	lda $DD0D
+	;NOTIFY SERVER WERE READY
+	lda #$93
+	sta $DD00
+	lda #$00
+	sta $DD03
+	lda #$10
+F1:	bit $DD0D
+	beq F1
+	lda $DD01
+	pha
+	lda #$97
+	sta $DD00
+	lda #$10
+F2:	bit $DD0D
+	beq F2
+	pla
+	rts
+;---------------------------------------
+FASTBLOCKSEND:	
+	;THIS ROUTINE IS OPTIMISED FOR
+	; TRANSFERRING RAM <$D000
+	jsr FASTGETCHAR
+	sta addr
+	jsr FASTGETCHAR
+	sta addr+1
+	ldy #$00
+	lda $DD0D
+	lda #$FF
+	sta $DD03
+fbsl:	;GET 2 BYTES LOOP
+	;INFORM SERVER OF READY FOR B1
+	lda (addr),y
+	sta $DD01
+	lda $DD0D
+	lda #$93
+	sta $DD00
+	;WAIT FOR SERVER
+	lda #$10
+fbs1:	bit $DD0D
+	beq fbs1
+	iny
+	;INFORM SERVER READY FOR B2
+	lda (addr),y
+	sta $DD01
+	lda $DD0d
+	lda #$97
+	sta $dd00
+	;; Wait for server
+	lda #$10
+fbs2:	bit $dd0d
+	beq fbs2
+	iny
+	cpy #$fe		; 254
+	bne fbsl
+	lda #$93
+	sta $dd00
+	;; wait for server ack end
+	lda #$00
+	sta $dd03
+	jmp fbg3-2		; jump to fast block get sever ack end
+
+	.endofcode
+	.data
+		
+NUMBYTES:	.byte $00
+XTEMP:	.byte $00
+YTEMP:	.byte $00
+TEMP1:	.byte $00
+DEVNUM:	.byte $07
+
+	;; PLoad temporary storage
+ploadx:	.byte $00
+ploady:	.byte $00
+ploadmid:	.byte $00
+ploadsize:	.byte $00
+ultpage:	 .byte $00
+	
+	;; Page buffer (for getting size of process)
+drivetablefull:
+	.text "64NET/2 DRIVER FOR LUNIX0.1P4"
+	.byte $0d
+	.text "DRIVE TABLE FULL - CANNOT LOAD"
+	.byte $0d
+	.byte $00
+
+doobymessage:
+	.text "64NET/2 DRIVER FOR LUNIX0.1P4 INSTALLED"
+	.byte $0d
+	.text "(C)PAUL GARDNER-STEPHEN 1997"
+	.byte $0d
+	.byte $00

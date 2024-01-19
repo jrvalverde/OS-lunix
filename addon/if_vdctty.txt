@@ -1,0 +1,94 @@
+
+---------------Cut Here for the documentation------------
+
+
+
+VDCTTY v0.1   C128 VDC SCREEN TTY DRIVER
+----------------------------------------
+
+by Ilker Ficicilar   - February 1997
+   filker@newton.physics.metu.edu.tr
+   e068214@orca.ccmetu.edu.tr
+
+
+    This vdctty filter command is coded as a LUnix command of LUnix OS.
+If someone executes the LUnix in the C64 mode of his C128, maybe he/she
+wants to use 80 column screen of C128. And this is what the 'vdctty' is for.
+
+    The first thing 'vdctty' does is to initialize the VDC screen to 25 rows,
+80 columns, monochrome text mode, and underlined blinking cursor. After 
+initialization, it enters in a loop of getting petscii characters from its
+input pipe and printing them to VDC screen. The 'vdctty' terminates if the
+pipe no more exists.
+
+    To use it, add 'vdctty' command's name 'vdctty' to the end of your 
+commands with a piping char: '!'. For example:
+
+ sh0.exe ! vdctty
+above command-structure opens a new shell as foreground process and directs
+its output to VDC screen.
+
+ ed ! vdctty
+this invokes the ED editor and prints its output to VDC screen.
+
+ cat <petscii-file> ! vdctty
+prints given petscii text file to the 80 columns VDC screen
+
+ atkeyb ! sh0.exe ! vdctty &
+this Dragon loads the PC-AT keyboard driver, redirects its output to a shell
+and again directs the output of shell to the VDC 80column screen as a 
+background process. Then it returns to the parent shell, and permits you
+and your friend to use same C128 with different keyboards and monitors.
+note: 'atkeyb' is partially completed for now, and will not be released soon.
+
+
+    Currently 'vdctty' only uses TTY type print option. That is you can't use
+up and down cursor keys, home key doesn't mean anything and clearscreen puts
+the cursor in the bottom line again. You can use left, right, delete and 
+return keys as control keys. And you may print only petscii characters.
+
+    Furthermore, if you do not want to use 40 column screen any more, you
+can use 'fast128' or 'fast' commands to speed the machine a little bit.
+Fast128 switches to 2MHz mode, and 'fast' closes the VIC screen. 
+As a final note; I wrote this document, using 'sh0.exe ! vdctty' , 'fast128'
+and 'ed'.
+
+
+Ilker Ficicilar
+
+---
+-----------------------End of VDCTTY Documentation-----------------
+
+-------------Cut here for the Uuencoded vdctty----------------------
+
+begin 644 vdctty
+M__\  0, 'QD% "Q                                             
+M                 %9$0T125B @J1 @49"M"!#P)(4:J0"%&: !L1G)+= &
+MR,E(T "(N8 2\#H@:9#(T/6I $P8D"" $*X!$" JD%BP[R"#$$QQ$$P)$4R0
+M$4R@$$R2$$SR$$SE$(X UBP UA#[C0'68   J:"B&"")$*D HA,@B1"I *(2
+M((D0J5"B(2")$*D HB @B1"@"*GQHAX@B1"(T/:I(*(8((D0J2"B'R")$*E0
+MHAX@B1!@J1I(((80:*B(F-#V8)A(J0"@"(X UBP UA#[C0'6B-#R:*A@>*4 
+M"0.% *4#*?P)!H4!H@"]4!*. -8L -:- =;HX"70[ZG8ZNJ%&JD A1FI$(4;
+MH "B$JD@((D0Z*D ((D0HA^E 2G[A0$)!*JQ&88!HA^. -8L -80^XT!ULCP
+M"Y@I!]#>((P03$H1((P0YAK&&]#/I0$) 84!((\06*D A1Q@        A1V8
+M2(I(I1W)D] )((\0J0"%'/!QR9W0",8<$&GF'/!ER1W0#.8<I1S)4)!9QARP
+M5<D-T D@AA"I (4<\$C)%/!6R2"00,E D!K)8+ $Z3^P$LF L 3I'[ *R<"0
+M*,G@L"3I?TBE'!AI@*(3((D0J0>B$B")$&BB'R")$.8<I1S)4) "QARB#Z4<
+M&&F ((D0:*IHJ*4=8.JE'/#JQAP8:7^B$R")$*D'HA(@B1"I(*(?((D0&)#/
+M  (         ?E!F22?@&2  !T?G   '@ %9   ( 'CH( =  "_G 2   'UD
+M\_\             #59$0U1462!6,"XQ($)9($E,2T52($9)0TE#24Q!4@T-
+M02!&24Q415(@5TA)0T@@4%))3E13(%!%5%-#24D@#4923TT@2513(%-41$E.
+B(%1/(%9$0R!30U)%14X@3T8@0S$R. T              $T@
+ 
+end
+
+
+
+
+
+
+
+
+
+
+

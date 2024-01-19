@@ -1,0 +1,84 @@
+
+Modules of LUnix
+================
+
+General definition:
+ Modules are used to extend the kernel, they add functions not needed by
+ everyone, or functions that should be easy to replace.
+ 
+ A module is a piece of code with a jump-table in front. A modules is
+ identified by a sequence of 3 bytes (chars). If there are more modules
+ of the same ID they are numbered beginning with 0.
+ The first address in the leading jump-table points to a kind of initialize
+ routine, that is called as soon as the module's code is loaded and relocated.
+ This init-call returns the number of codepages the module needs after
+ init is finished. (I guess most of the init-code is only executed once, so
+ there is no need to hold the code after it is executed)
+
+Modules are loaded (and relocated) by "insmod" a special application
+(not written yet). The kernel holds a table of all modules installed
+(each entry contains base-address, and ID of a module)
+
+When an application needs a special function, that is known to be a part
+of a module with known ID, it calls a special kernel routine to get the
+base address of the module. The application then jumps directly into the
+module's code. (So all functions implemented in a module MUST be reentrant,
+because many applications might access the module at the same time)
+
+Exeptions:
+
+ Modules with ID "xmi" (eXternal Memory Interface modules)
+  The kernel routines "extalloc", "extfree" are realized on top of
+  the present "xmi"-modules. The user MUST NOT use "xmi"-modules directly!
+
+ Modules with ID "dev" (device modules)
+  The kernel routines "fopen", "fclose", "fget"... are realized on top of the
+  present "dev"-modules. Each devide module is assigned a character (eg.
+  "f" for the floppydisk device) so examining the filename's prefix leads
+  to the module, that is responsible for the file. The "dev" modules may be
+  used directly. (eg. for special functions like "format")
+
+Examples:
+
+; format the default (boot/root) floppy (8)
+
+  lda  #8   ; select floppy 8
+  sta  minor
+  
+  lda  #6  ; call 6. item of module (format)
+  ldx  #0
+  bit  module_id
+  jsr  modcall
+  ...
+
+  module_id: .asc "dev"
+
+This way to access a module is quite slow, because the kernel has to search
+the module-table every time you make a call to this module.
+An other (faster) solution is to get the needed addresses once, and call
+the module's routines directly later on.
+  
+  ; get the base address of the first (default) "scr"-module (screen module)
+
+  ldx  #0
+  bit  module_id
+  jsr  modsearch
+  nop                  ; exit on error
+  sta  module_base
+  sty  module_base+1
+
+  ; copy the modules jump-table (eg. 10 items)
+
+  ldy  #29
+- lda  (module_base),y
+  sta  module_jmptab,y
+  dey
+  bpl  -
+  ...
+  jsr  module_jmptab+18   ; call 6. item of module "scr"/$00
+  ...
+
+  .data
+    module_id:  .asc "scr"
+    module_jmptab: .buf 30  ; room for 10 items ("jmp  <module_routine>")
+  

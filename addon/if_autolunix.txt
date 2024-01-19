@@ -1,0 +1,86 @@
+  Hi there,
+
+ The basic file below makes your Lunix system disk bootable with a C128.
+The program writes the boot block to track 1 sector 0 of the last 
+accessed disk-drive or drive #8 .
+ For more please check this URL:
+http://newton.physics.metu.edu.tr/~filker/cbm.html
+
+bye,
+
+Ilker
+
+-------------------cut here for autolunix documentation---------
+
+
+
+
+AUTOBOOT DISK MAKER FOR LUNIX-V0.1p4 AND C128
+---------------------------------------------
+
+
+
+   The 'autolunix' program is a basic v2.0 program which makes the disk of
+LUnix OS bootable.
+
+   Its usage is simple. Just load autolunix basic file and run it. It will 
+check the boot sector, whether it is allocated or not. If the boot block
+(track 1 sector 0) is not free, it stops with prompting you the situation.
+If you don't bother to loose data or you do know what you're doing, typing
+"cont" continues the process.
+
+   After succesfully writing of the boot-block, you can test it by pressing 
+the reset button of your C128, while the boot disk is in the drive #8 .
+If there is no problem, the bootstrap code in the C128 firmware OS loads the
+boot-block into the $00b00 address, and executes the code presented in it.
+The code first loads the file "lunix.sys" with fast load routines of C128,
+then it writes the autostart information to the area of $8000. And finally
+it turns the 1571 into 1541 emulation mode and switches to C64 mode.
+The C64 firmware OS checks the autostart information, and following the 
+pointers jumps to the $8009 address. The code at this location initializes
+the I/O and memory, deletes the autostart information and jumps to the
+$8c3a address which is starting address of LUnix OS. So that the LUnix
+will gain the control.
+
+   Make use of it.
+
+
+Ilker Ficicilar
+
+--------------------end of autolunix documentation---------------
+
+--------cut here for the uuencoded basic lunix-autobooter----------
+
+begin 644 autolunix
+M 0@E" ( CR J*BHJ*BHJ*BHJ*BHJ*BHJ*BHJ*BHJ*BHJ*BHJ*@!)" , CR J
+M(" @(" @(" @(" @(" @(" @(" @(" @(" @*@!M" 0 CR J($%55$]"3T]4
+M15(@1D]2($Q53DE8(%8P+C$@*@"1" 4 CR J(" @(" @(" @(" @(" @(" @
+M(" @(" @(" @*@"U" 8 CR J($)9($E,2T52($9)0TE#24Q!4B @(" @(" @
+M*@#9" < CR J(" @(" @(" @(" @(" @(" @(" @(" @(" @*@#]" @ CR J
+M*BHJ*BHJ*BHJ*BHJ*BHJ*BHJ*BHJ*BHJ*BHJ*@ #"0D CP -"0H 022R(B( 
+M+0D, )DB4%)%4$%224Y'(%1(12!"3T]4($),3T-+(@!)"0\ AT$ZBT&QLC"G
+M022R022JQRA!*3J),34 8PD2 )DB5%)924Y'(%1/(%=2251%($E4(@!["10 
+MGS$L."PQ-3J?,BPX+#$S+"(C(@"."18 F#$L(D(M02 P(#$@,"( G@D8 (0Q
+M+$$L0B0L0RQ$ . )&@"+($&Q,*>9(E1(25,@0DQ/0TL@25,@04Q,3T-!5$5$
+M(CJ9(E1/($-/3E1)3E5%(%194$4@)T-/3E0G(CJ0 "D*' "9(D)%5T%212!9
+M3U4@5TE,3"!,3T]312!42$4B.IDB4%)%5DE/55,@0T].5$5.5"!/1B!44D%#
+M2R Q(%-%0U1/4B P(@!L"AT F2)04D534R!35$]0(%1/($-!3D-%3"(Z@4FR
+M,*0R,# P.H(ZF2)74DE424Y'(%1(12!"3T]4(%-%0U1/4B( ?PH> )@Q+")"
+M+48@," Q(# B )$** "8,2PB0BU0(#$S(# B )P*,@"8,BQ!)#L L0H\ )@Q
+M+")5,B Q,R P(#$@,"( Q I& )@Q+")"+4$@," Q(# B - *4 "@,CJ@,3J 
+M !8+R "#-C<L-C8L-S<L,"PP+# L,"PQ-"PS,"PQ-#<L-C8L-SDL-SDL.#0L
+M-S,L-S@L-S$L,S(L,C T+#(Q,RPW."PW,P!<"]( @S@X+# L,"PQ-CDL.2PQ
+M-C(L.38L,38P+#$Q+#,R+#$X.2PR-34L,38Y+#4L,38V+#$X-BPQ-C L,2PS
+M,BPQ.#8 HPO< (,R-34L,38Y+# L,S(L,C$S+#(U-2PQ-C L,S$L,3@U+#$Q
+M,BPQ,2PQ-3,L,"PQ,C@L,3,V+#$V+#(T-RPQ-CDL. #I"^8 @S,R+#$W-RPR
+M-34L,38Y+#@U+#,R+#$V."PR-34L,38Y+#0X+#,R+#$V."PR-34L,38Y+#8R
+M+#,R+#$V."PR-34 +PSP (,Q-CDL-S<L,S(L,38X+#(U-2PQ-CDL-#@L,S(L
+M,38X+#(U-2PS,BPQ-S0L,C4U+#<V+#<W+#(U-2PP+#<V+#@U '4,^@"#-S@L
+M-S,L.#@L-#8L.#,L.#DL.#,L,"PP+# L,"PP+# L,"PY+#$R."PY+#$R."PQ
+M.34L,3DT+#(P-2PU-BPT. "V# 0!@S$V.2PU-2PQ,S,L,2PS,BPQ,S4L,C4U
+M+#,R+#$R.2PR-34L,S(L,3,X+#(U-2PQ-CDL."PQ,S,L,3@V -\,#@&#,30Q
+K+#0L,3(X+#<V+#4X+#$T,"PP+# L,"PP+# L,"PP+#  YPPB 8,M,0   #0Q
+ 
+end
+
+----------------endof uuencoded autolunix----------------

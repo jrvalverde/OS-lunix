@@ -1,0 +1,57 @@
+<!DOCTYPE HTML PUBLIC "-//AdvaSoft//DTD HTML 2 extended 960415//EN">
+<HTML>
+<HEAD>
+ <TITLE>LUnix Documentation</TITLE>
+</HEAD>
+
+<BODY>
+<CENTER><H1><STRONG>LUnix Programming</STRONG></H1></CENTER>
+<HR>
+
+<H3>Documentation <A HREF="doc/lunix.txt">(all)</A></H3>
+<UL>
+<LI>dynamic memory management 
+<LI>up to 32 processes at a time 
+<LI><A HREF="doc/lpip.txt">inter process communication via pipes and signals
+(german)</A> 
+<LI><A HREF="doc/lsys.txt">System routines and tables</A> 
+<LI><A HREF="doc/lrou.txt">More about the routines</A> 
+<LI><A HREF="doc/lstr.txt">Structure of LUnix applications </A>- <I><A HREF="doc/lgerstr.txt">(GER)</A></I>
+<LI><A HREF="doc/lnet.txt">(local) Networking </A>- <I><A HREF="doc/lgernet.txt">(GER)</A></I>
+</UL>
+<HR>
+<H3><IMG SRC="updated.gif" ALT="[updated] "> <A HREF="cdsys.html">Cross Development System</A></H3>
+A complete cross development system consisting of <STRONG>lupo</STRONG> a universal preprocessor
+for assembler sources, <STRONG>luna</STRONG> an assembler designed for creating LUnix applications,
+<STRONG>lld</STRONG> a linker for objectfiles created by luna. The whole system is written in C and
+will compile with GCC (GNU C-Compiler). There are compiled binarys for AMIGA, MS-DOS and OS/2.
+<P>
+<STRONG>Include files (obsolete)</STRONG>
+<UL>
+<LI><A HREF="src/kernel.inc">kernel.inc</A> - includefile for LUnix V0.1
+<LI><A HREF="src/cbm_bios.h">cbm_bios.h</A> - includefile, defines C64's bios functions  
+</UL>
+<STRONG>Librarys</STRONG>
+<UL>
+<LI><IMG SRC="NEW.gif" ALT="[new] "> stdlib.lib - first steps toward a kind of <A HREF="doc/stdlib.txt">standard-library</A> for lunix.
+The collection of the <A HREF="pkg/tools64.tgz">cross-development-tools</A> now includes the library and many great include files plus many examples.
+</UL>
+<STRONG>Compiler</STRONG>
+<UL>
+<LI><IMG SRC="NEW.gif" ALT="[NEW] "> <A HREF="http://www.geocities.com/SiliconValley/Way/4588/scc6502.html">small-c for the 6502 and LUnix</A> , by <A HREF="http://www.geocities.com/SiliconValley/Way/4588">Ivan A. Curtis</A>
+</UL>
+
+
+
+<HR>
+<H3>Sample Sourcecode</H3>
+<UL>
+<LI> <A HREF="src/sidscel.a"> SIDplay-sceleton</A> (<STRONG>luna</STRONG>) adds IRQ-routine to  make noise (using SID)
+<LI> <A HREF="src/fullscreen.txt"> Fullscreen-sceleton </A> (<STRONG>luna</STRONG>) sample fullscreen-application
+<LI> <A HREF="src/init.txt">init.exe</A> (<STRONG>luna</STRONG>) manages console screen 
+<LI> <A HREF="src/xargs.txt">xargs</A> (<STRONG>luna</STRONG>) shows you how to load and execute other processes
+</UL>
+<HR>
+<CENTER><H3><A HREF="lunix.html">Back to the Lunix homepage (in germany)</A></H3></CENTER>
+</BODY>
+</HTML>

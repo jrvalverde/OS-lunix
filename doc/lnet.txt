@@ -1,0 +1,75 @@
+How to use the LUnix-net-driver :
+=================================
+
+What do i need to run this net-driver ?
+ - You should have at least one C64/128
+   (but you'll have much more fun,if there are more that just only one
+   C64)
+ - Of course you need LUnix_v0.1p2 !
+   and the following files : "net.drv","rshserv","rsh","netstat"
+    you can get all of them (and even more) by anonymous ftp...
+    131.188.190.131   /pub/poldi/LUnix/lunix_v0.1/...
+    (i'll add the 4 'net-files' to this article)
+ - And you need a suitable cable ! (if you use more than 1 C64 :)
+   You have to connect (at least) GND,PB0,PB1,PB2,PB3,PB6
+   (all from the C64's userport) of all C64, the software enables
+   up to 6 C64 in the net.
+
+   *** if you have only one discdrive you'll need a switch to connect/
+       disconnect one of the pins to ground (eg. PB0).
+       Use a little resistor (about 470-1000 Ohms) to connect the
+       certain pin to ground.
+       If the connection is swiched 'ON' all the communication
+       between the computer is disabled.
+
+How to start it :
+ - First unplug all the computers and discdrives/monitors...
+ - Then connect the userport-pins (you should try to connect the GND-pin
+   first)
+ *** only one discdriver: connect the GND to the discdrive (!),to
+     prevent damage when connecting/disconnecting it to one computer
+     after an other later.
+ - Now shitch them all on
+ - Load and start LUnix,
+   press 'add a session' ,type 'net.drv X' X is the ID of the certain
+   computer.The ID is a number from 1..6 (don't use the same ID twice !)
+   Then enable logins from other computer to this computer by starting
+   the remote-shell-server process by typing 'rshserv -v &'
+   (-v is not neccessary).
+	    <-do this with every computer you have connected .
+
+Thats it ! The net is now active.
+
+You can use the net to execute shells on other (or the local) computer.
+
+just type 'rsh X' (X- is the ID of a certain computer, that is connected
+with the local computer)
+and you should get a 'remote shell' from that computer to work with :)
+The actual 'rshserv' process enables up to 4 remote-logins at a time
+(it doesn't matter from what computer you are calling)
+
+Type 'exit' to logout again.
+
+
+
+ *** only one discdrive:
+     You can use one of the computer to work as server (this will be
+     the only computer with a discdriver later)
+     You just have to start 'rsh's on the other computer in direction
+     to the server.
+     But how to do that if there is only on discdriver available ?
+     That what's the mentioned shitch is for !
+     Switch 'ON' (and block all net actions),then connect the discdrive
+     the one of the other computer and type 'rsh Y' (Y is the servers ID)
+     connect to the next computer...and so on...then connect the
+     discdrive to the 'server' and switch 'OFF' !......
+
+
+If you have questions...or something else let me know !
+
+
+bye Daniel
+
+
+
+

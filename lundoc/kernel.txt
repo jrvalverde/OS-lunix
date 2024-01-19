@@ -1,0 +1,573 @@
+
+LUnix Kernel Documentation:
+===========================
+
+Note: the kernel is not finished (ie. you can't compile it yet)
+
+
+   1) Kernel interface
+    1.1) Task controlling stuff
+    1.2) Internal memory
+    1.3) External memory
+    1.4) Semaphores, Hardware access
+    1.5) Modules
+
+   2) Debugging capabilities (breakpoints)
+
+
+1) Kernel interface:
+====================
+
+  Catching errors
+  ---------------
+
+  If you used to write assembler programms, you know the problem of
+  catching errors:
+
+       ...
+       jsr  print
+       bcs  error
+       ...
+       jsr  print
+       bcs  error
+       ...
+       ...and so on...
+
+  Since LUnix has many systemcalls, that may return an error, i've implented
+  a special shortcut for this problem:
+
+       ...
+       jsr  print
+       nop
+       ...
+       jsr  print
+       nop
+       ...
+       ...and so on...
+
+  A NOP doen't take longer than a BCS (with carry cleared) !
+  If there is an error (witch should be a rare situation anyway) 
+  the system looks into your code, if there is a NOP after the systemcall.
+  If there is, the system does a suicerrout (kill your process after 
+  printing an error message). If there is no NOP, the kernel assumes 
+  you will catch the error on your own.
+
+
+  Some hints, on how to read the table below:
+  -------------------------------------------
+
+  [...] :  "i" - you have to disable IRQ before calling it
+           "t" - you have to disable taskswitching before calling it
+           "s" - you must call "enter_systemcode" before calling it
+       "u","h" - routine will return with IRQ enabled (high level routine) 
+           "I" - routine will return with IRQ disabled (low level routine)
+           "T" - routine will return with tastswitching disabled
+           "S" - routine does "enter_systemcode"
+           "b" - routine may block your task, or may at least cause a 
+                 taskswitch
+           "e" - routine may return an error
+
+  NOTE: "i" implies "t" (there is no taskswitch, when IRQ is disabled)
+        "t" implies "s" (there are no sideeffects, when tastswitching is
+                         disabled)
+
+  < ... : arguments needed
+            bit$ - a parameter (pointer) passed by a preceeding bit $xxxx
+                   instruction. ($xxxx is the parameter passed)
+  > ... : returns
+  = ... : preserves
+  % ... : alters
+
+  
+1.1) Task controlling stuff:
+----------------------------
+
+  [I] makeflowtab
+ 
+   % all registers (also hl,hh)  
+
+   Calculates linked list of processes used by the taskswitcher.
+   Also calulates size of time slice for each process depending on
+   its priority. Called every time a process is created, killed, blocked,
+   unblocked, ...
+
+
+  [ub] block
+
+   < A/Y=WaitState
+   % all registers
+
+   Blocks the current task. Will return, if someone else does an
+   munblk(WaitState). 
+
+   defined wait-states (block-parameter A/Y)
+             $00 $00  -  NULL
+             $01 <nn> -  wait for pipe not full (nn=fd)
+             $02 <nn> -  wait for pipe not empty (nn=fd)
+             $03 $00  -  wait for free pipe
+             $04 $00  -  wait for free memory-page (internal)
+             $05 $00  -  wait for free process-slot
+             $06 $xx  -  (reserved for: "wait for signal")
+             $07 <nn> -  wait for exitcode (nn=IPID)
+             $08 <nn> -  wait for semaphore (nn=number of semaphore)
+             $09 $00  -  (undefined)
+             $0a <nn> -  sleeping (nn= highbyte of sleeptime)
+             $0b <nn> -  serving exitcode (nn=PIPID)
+             $0c <nn> -  reached breakpoint (nn=ID of breakpoint)
+             $80+id $xx - reserved for modules
+             $f0+nr $xx - reserved for controller tasks
+
+  [b] break
+
+   = all registers and flags
+
+   Force a taskswitch. (you may also call it "schedule")
+
+
+  [i] munblk
+
+   < A/Y=WaitState
+   % all regiters
+
+   Unblocks all processes, that are blocked with WaitState.
+   (calls makeflowtab)
+
+
+  [b] printerror
+
+   < A=errorcode
+   % all registers
+
+   Prints error message "<cmd>: err: <message>\n".
+   (knows all errorcodes returned by kernel routines).
+
+   Known error messages:
+       "no such process"
+       "ill. arguments in function call"
+       "device is locked"
+       "stack overflow"
+       "can't hook into system"
+       "missing argument in function call"
+       "page fault"
+       "access to foreign process"
+       "can't exec, illegal code"
+       "ill. device number"
+       "can't write to dev"
+       "can't read from dev"
+       "out of memory"
+       "too many modules"
+       "can't find module"
+       "illegal call of module"
+       "not enough external memory"
+       "ill. XMI-call"
+       "ill. nmienable or disable"
+       "cleanupstack overflow"
+       "cleanupstack underflow"
+       "i/o error"
+
+  [ueb] startprocess
+
+   < X=startpage (this page contains some additional arguments!)
+   > A/Y=PID of new process, c=error
+   % all registers
+
+   Tries to start a new process (code must be relocated!)
+  
+
+  [b] suicide
+
+   < A=exitcode
+   > some kind of reincarnation ??
+   % you shouldn't care about...
+
+   Kills the current process, returns an exitcode to parent process.
+   (if there are)
+
+
+  [b] suicerrout
+
+   < A=exitcode
+
+   Same as suicude, but prints an errormessage before committing suicide.
+
+
+  [ube] getexitcode
+
+   < A/Y=PID of process, bit$=pointer to buffer, c=forced
+   > A=status, c=error (modifies buffer contents)
+   % all registers
+
+   Try to get the exitcode of a child process.
+
+   status=$00 means "ok, i got the exitcode"
+   status=$ff means "sorry, no exitcode yet" (will cause block, when
+              in forced mode).
+
+   Buffer contents:
+     byte 0..4: CPU time consumed by process
+     byte 5   : exitcode
+
+
+  [ue] sendsig
+
+   < A/Y=PID, X=signal number (9 is kill)
+   > A=status, c=error
+   % all registers
+
+   Try to send signal to a process.
+   
+   Signals are:
+     6 - user break
+     7 - killed parent process
+     8 - killed child
+     9 - kill
+
+
+  [i] _raw.sendsig
+
+   < X=IPID, hl=signal number
+   > A=status, c=error
+   % all registers
+
+   Try to send signal.
+
+   status=$00 means "signal sent"
+   status=$ff means "signal not sent"
+
+
+  [ub] sleep
+
+   < X/Y=sleep time in sys_ticks (around 1/64s)
+   % all registers
+
+   Will block the process for at least x system ticks.
+
+
+  [Ie] getipid
+
+   < A/Y=PID
+   > X=IPID, c=error
+
+   Get the internal process ID of a give process. The internal ID is
+   used as a pointer into many kernel structures. (ranges from 0 to 31)
+
+
+  [Ie] cstackpush
+
+   < A=parameter passed to cleanup-routine, bit$=pointer to cleanup-routine
+   > c=error
+   % all registers (also hl/hh, l_syszp/l_syszp+1)
+
+   Add item to cleanup-table. If a process is killed before calling
+   cstackpop, the item will be processed (a cleanup-routine will be
+   called).
+
+
+  [Ie] cstackpop
+
+   > c=error
+   % all registers (also hl/hh)
+
+   Remove item from cleanup-table.
+
+
+1.2) Internal memory
+--------------------
+
+  [hb] intalloc
+
+   < A=number of pages
+   > A=MID
+   % all registers (also hl/hh)
+
+   Calls mpalloc with X=IPID, and calls "cli" at the end.
+   Also blocks your process if wanted memory is not available (yet)
+   and retrys allocating it. (calls imemblk if neccessary)
+
+
+  [he] intfree
+
+   < X=MID
+   % all registers
+
+   Calls pfree after checking permissions (is more secure than pfree).
+
+
+  [Ie] spalloc
+
+   < X=Occupation-Code (normaly your IPID)
+   > A=MID, c=error
+   % all registers (also hh)
+
+   Try to allocate a single page of internal (bank0) memory
+
+
+  [Ie] mpalloc
+
+   < A=number of pages, X=Occupation-Code (eg. IPID)
+   > A=MID, c=error
+   % all registers (also hl,hh)
+
+   Try to allocate a number of continuous pages of internal memory.
+
+
+  [Ie] pfree
+
+   < X=MID
+   > c=error
+   % all registers
+
+   Free a single or more pages allocated with spalloc or mpalloc.
+
+
+  [Ib] smballoc
+
+   > X=SMB-ID (hl/hh=ptr to SMB, Y=0)
+   % all registers
+
+   Try to allocate 32 Bytes (a small memory block).
+
+
+  [I] smbfree
+
+   < X=SMB-ID
+   % all registers
+
+   Free a small memory block allocated with smballoc.
+
+
+  [Ib] lmemblk
+
+   % all registers
+
+   Wait for more (internal) memory.
+
+
+  Experimental libc-like memory management
+  ----------------------------------------
+
+  [ube] malloc
+
+   < A/Y=number of bytes
+   > A/Y=pointer to allocated memory, c=error
+   % all registers
+
+   Allocate piece of (internal) memory (1..xxxxx bytes)
+
+
+  [ube] remalloc
+
+   < A/Y=new size, X=pointer to pointer to allocated memory
+   > A/Y=pointer to allocated memory, c=error
+   % all registers
+
+   Change the size of a already allocated piece of memory.
+   (the contents will be preserved, if possible)
+
+
+  [ube] free
+
+   < A/Y=pointer to allocated memory
+   % all registers
+
+   Free allocated memory.
+
+
+1.3) External memory (experimental)
+-----------------------------------
+
+  [ube] extalloc
+
+   < bit$=pointer to EMD (with byte 8/9 = number of pages)
+   > c=error (adapts EMD)
+   % all registers
+
+   Try to allocate a number of external memory pages. (accessed through
+   a XMI [external memory interface]- module)
+
+
+  EMD (external memory descriptor):
+   byte 0..5:  desc - DON'T MODIFY ! (initialize with zero!)
+   byte 6..7:  pointer to read/write buffer (256 bytes of internal memory)
+   byte 8..9:  number of external page you want to read/write
+
+
+  [ube] extfree
+
+   < bit$=pointer to EMD
+   > c=error (adapts EMD)
+   % all registers
+
+   Free external memory pages allocated with extalloc
+
+
+  [ube] extread
+
+   < bit$=pointer to EMD
+   > c=error (write into page, known from EMD)
+   % all registers
+
+   Copy a page (256 bytes) from external into internal memory
+
+
+  [ube] extwrite
+
+   < bit$=pointer to EMD (read page known from EMD)
+   > c=error (write into external page known from EMD)
+   % all registers
+
+   Copy a page (256 bytes) from internal into external memory
+
+
+1.4) Semaphores, get access to hardware
+---------------------------------------
+
+  [ube] lock
+
+   < X=number of semaphore, c=forced
+   > c=error
+   % all registers
+
+   Try to lock a system semaphore to get exclusive access to hardware.
+
+   supported semaphores:
+     0      : IEC serial bus
+     1      : Keyboard (i/o of CIA $dd) (Joystick Port 0)
+     2      : Joystick Port 1
+     3      : VIC screen (viewer)
+     4      : (unused, maybe VDC on C128)
+     5      : (unused)
+     6      : (unused)
+     7      : (unused)
+     8 ..15 : Sprites 0..7
+     16..23 : Userport pins 0..7
+     24     : use alert (of CIA $dc00)
+     25     : IRQ-job1  \
+     26     : IRQ-job2   > all handled by irqhook
+     27     : IRQ-job3  /
+     28     : NMI-job (use CIA $dd00) -- handled by nmihook
+     29     : SID-voice 1
+     30     : SID-voice 2
+     31     : SID-vioce 3
+
+   NOTE: IEC serial bus also covers the ROM routines, that are used to
+         access it ! So before you change some of the related zeropage
+         variables (eg. by "jsr $ffba" or "jsr $ffbd") you have to
+         lock it !!
+
+
+  [ue] unlock
+
+   < X=number of semaphore
+   > c=error
+   % all registers
+
+   Unlock system semaphore. This also does some cleanup (eg. switches
+   sprites and Sid-voices off...)
+
+
+  [ue] irqhook
+
+   < bit$=pointer to IRQ-job
+   > A=number of semaphore, c=error
+   % all registers
+
+   Try to add a IRQ-job to the systems IRQ-handler.
+   If successfull, the IRQ-Job will be called around 64 times per
+   second. To remove the job from the IRQ-handler call unlock with
+   semaphore returned (25,26 or 27). Or simply commit suicide.
+
+
+  [ue] nmihook
+
+   < bit$=pointer to table of NMI related calls
+   > c=error
+   % all registers
+
+   Format of table:
+
+     jmp  NMI_routine  ; points to the NMI-routine (must return with
+                       ;  pla,sta $01,pla,tay,pla,tax,pla,rti)
+     jmp  NMI_disable  ; disable NMI (eg. called before using the IEC
+                       ;  serial bus)
+     jmp  NMI_enable   ; enable NMI (eg. called after using the IEC 
+                       ;  serial bus)
+
+   Same as irqhook, but for NMI. If there is a NMI, the system will jump
+   into your NMI-routine. After hook you also have access to CIA B ($dd00)
+   so you can trigger NMIs on your own. To remove your NMI-job call
+   unlock with semaphore 28.
+   Don't enable the NMI on your own! The system will call NMI_enable
+   as soon as possible after you called nmihook (and it returned
+   without error).
+
+
+  [] getkernelversion
+
+   > A/X/Y=version  (eg. A=0,X=8,Y="a" for kernel 0.8 patchlevel a)
+
+   Get version of kernel.
+
+
+1.5) Handling of modules
+------------------------
+
+  [ube] modadd
+
+   < bit$=pointer to module base
+   > A=number of module of this kind, c=error
+   % all registers
+
+   Add module to kernel.
+
+
+  [ube] modsearch
+
+   < bit$=pointer to type (3 chars), X=number of module of that kind
+   > A/Y=pointer to module basem c=error
+   % all registers
+
+   Search for a module.
+
+
+  [ube] modcall
+
+   < bit$=pointer to type (3 chars), X=number of that kind of module
+     A=offset
+   > c=error
+   % all registers
+
+   Call routine of module.
+   
+
+
+
+2) Debugging capabilities
+=========================
+
+  The kernel supports breakpoints.
+  Everytime a BRK-instruction is executed the current process will
+  be blocked with WaitState=$0c/$nn. The BRK-Instruction is a 2byte-
+  Instruction ! (This also saves us from the 65xx NMI/BRK bug).
+  The byte after the $00 (BRK) opcode is also stored in the WaitState
+  so you can recognize the breakpoint more easily. (Up to 256
+  breakpoints !).
+
+    example:
+               lda  #0
+               ...blabla...
+               ...
+               brk
+               .byte $01   ; breakpoint nr. 1
+               ...
+               brk
+               .byte $02   ; breakpoint nr. 2 
+               ...
+
+    To continue the operation after reaching a breakpoint, you need
+    an other process do:
+
+               lda  #$0c
+               ldy  #<nr. of breakpoint>
+               jsr  munblk     ; unblock all process that reached breakpoint
+                               ; nr. x

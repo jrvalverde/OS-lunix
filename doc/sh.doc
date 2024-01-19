@@ -1,0 +1,59 @@
+LUnix Shell Verison 2.0 (30.12.1996)
+
+bugfixes:
+
+ - spaces will no longer be removed from parameter-string
+
+new:
+
+ - shell can excute a commandline passed as parameter-string
+ - shell remembers child processes
+ - history-function (256 byte)
+
+todo:
+
+ - execute shell scripts (use "cat ! sh0.exe" instead)
+ - execute a .shrc - file ?
+ - allow quoting ?  (eg. cat "test file a")
+ - improve commandline editing
+ - support of variables (?)
+
+
+begin 644 sh
+M__\``0H`R-D``!Q``````````````````````$Q+$0``````````````````
+M`````````````````%-(````````J1`@49!,2!"MH,*-3Q:B`(Y0%HY1%HY7
+M%JD!G0`7Z-#ZC@`7K0@0T`FN`A`@79`LX16I`(U,%HU*%HU6%JU0%LG_\%.M
+M"!#P(GB%!:``A`3(L029_Q?P`\C0]HQ'%J4%('60J?^-4!9,.!$@L!2M3Q8@
+M:9"I/B!ID*D@(&F0D`-,&Y"I`(U'%JU7%HU8%B!FD)`)R?_PZ:D`3!B0R03P
+M]\D-D.K)$=`#3%L5R9'0`TP+%4C)%-`>KD<6\!7*CD<6J9T@:9"I("!ID*F=
+M(&F0L*]H3,X0(&F0:+"ER0WP$:Q'%L#_\`>9`!C(C$<63,X0(&\5(+83D`VI
+M`(U(%HU)%JY'%M!-3'(03%H32"Q*%C#WJ?^-2!9H0*Y)%KT`&"E_R2#0!NCL
+M1Q:0\8Y)%DQV$>Y)%JY)%NQ'%K`-O0`8JBE_R2#P!AB*8*D`+*D@.&`LHA7*
+MO0`8R2;0#\Y'%O`5J8"-5A:I`$RP$:E`("&06(I(3+T1:*H@)Y!83'(0C4T6
+MH`",2Q8@6!&P#9FB%<C`$O`?('`1D/.I`)FB%2#Y$ZZ0$:R1$2!.D+`;(&.0
+MD!FP%"!P$9#[3-<1KDT6[`(0\`0@)Y!83!032"`N%"!S$:X"$,D`\`:I@"`A
+MD%AHCDX6JJ``($B0R*U-%B!(D,BM3A:-318@2)#(K0,0($B0J00@19"PM*Y,
+M%IT`&)CHG0`8Z(Y,%BQ6%A!`[E$6K5$6C5(6J0"-4Q:I6R!ID"!X%*E=(&F0
+MJ2`@:9"L41:N3!:]_A>-4A:9!Q:]_Q>-4Q:9)Q8@>!2I#2!ID*D`+$@6,'0@
+M<Q'P$\DAT`H@<!'P!9`#3,`1J0M,%!-H\%9((!*0K0`8K`$8(&"06+`?K@$0
+M(&^0L#;PYZX!$"`JD+`LA01H2*JE!"`MD%B0X2`2D*X"$"!OD+`4T/.N3!;*
+MO0`8J,J]`!@@8)!8D.&I`(U*%DRT$4QR$$AXKDP6\!?*O0`8J,J]`!B.3!8@
+M8)"PZ2`5D$P5$ZX#$"!=D"R2$VA(2DI*2JJ]IA,@;)!H*0^JO:83(&R0J0T@
+M;)!,M!&*2)A(J0"-2A:N2A;L3!;P&;T!&*B]`!CHZ(Y*%B!@D+#GH@8@2Y!,
+M8Q-HJ&BJJ?^-2A9H0`RV$T5814,M4TM)4$5$+T524D]2("0`,#$R,S0U-C<X
+M.6%B8V1E9J``C$D6(%@1L!;9OQ70!\@@<!%,OA.I`(U0%HU)%CA@N;\5T/%X
+MK5$6\!4L4!8P$*F`C5`6K@(0(%V0+,05D-],&Y"ND!&LD1$@3I"0%Z(-O:(5
+MG:05RA#WK4\6C:(5J3J-HQ5@K:(5C4\68+J]`P&JJ0"@"$Q(D"!8$?#OR2'P
+MZZD!('*0J+J]`P&JF*`(($B0>(4%H`"$!*D`D03((%@1L!K)(?`6R0WP$I$$
+MR"!P$9#P\`BI()$$R$Q4%*D`D01@H@2@`#BM4A;]M16M4Q;]NA60$(U3%JU2
+M%OVU%8U2%LA,?!28\`<),"!ID*`PRM#4K5(6"3!,:9"M41;P0:D`C506C546
+MKE06O"@6C%,6O0@6C5(6(&"06+`EKE46K5(6G0@6K5,6G2@6Z(Y5%NY4%JU4
+M%LU1%I#-K546C5$68*X"$"!=D"S;%2!X%*D-(&F03.44KE@6O0`7R0'P"LJ]
+M`!?P!\D!T/9,SA".6!:N1Q;P$JF=(&F0J2`@:9"IG2!ID,K0[J``KE@6[%<6
+M\`_HO0`7\`F9`!@@:9#(T/&,1Q9,SA"N6!;L5Q;P]>B]`!?0^HY8%DPE%:Y7
+M%NBM1Q;P**``N0`8\`J=`!?HR,Q'%M#QJ0"=`!>.5Q;HO0`7\`3)`=#VJ0&=
+M`!=@`@`````````````````````````!"F3H$`````,G15A)5`!93U4@2$%6
+M12!254Y.24Y'($I/0E,-`$1/3D4@`&QU3DE8('-(14Q,('9%4E-)3TX@,BXP
+/("@S,"XQ,BXQ.3DV*0T`
+`
+end

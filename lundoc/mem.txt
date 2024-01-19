@@ -1,0 +1,57 @@
+LUnix' way to access external RAM
+=================================
+
+Access is done through XMI modules (external memory interface).
+Such an XMI module offers a little set of functions:
+
+          init
+                  initializes (detects) the memory expansion and
+                  returns the amount of 64kbyte images that are
+                  available. It also sets up the initial pointer
+                  table (see below)
+
+          readpage
+                  copy 256 byte of external into internal RAM
+
+          writepage
+                  copy 256 byte of internal into external RAM
+
+          linkfollow
+                  follow the "next"-link n times and return the
+                  page it points to.
+
+These functions are very easy to implement, so writing a new XMI module
+should be no problem.
+
+
+Every 64kbyte block (256 pages) holds 254 data pages and 2 pages with
+extra information:
+
+      offset $xx00,
+      offset $xx01 - 256 words (lo,hi order)
+                      word 0: pointer to first free page
+                      word 1: (unused)
+                      word 2..255:
+                              one "next"-pointer for each free page in this
+                              64kbyte segment.
+      offset $xx02
+              ...  - free pages
+      offset $xxff 
+
+      There can be 256 segments, so the number of available free pages
+      is 65024 (256*254 pages or 15.875 MByte).
+
+The pointer of each page points its following page or zero, if its the
+last page. The pointer of the first page (which is used by the pointer
+table itself) points to the first free page. The 2nd pointer is
+replaced by the number of available pages in total. (only the 2nd
+pointer of the very first 64kb block is used this way).
+
+For more details look into the XMI driver that can be used to access 
+the hidden RAM ($d000-$dfff).
+
+Note:
+ Linkfollow could be done by calls of readpage, but this maybe much slower
+ than possible, because many pages (256 bytes each) would be loaded only
+ because of the need of one word.
+ The XMI module shoud offer a faster way to do it.

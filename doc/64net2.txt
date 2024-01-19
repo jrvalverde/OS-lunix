@@ -1,0 +1,39 @@
+There is now a 64NET/2 driver for LUnix.
+
+You need 64NET/2 v00.03 or higher for the LUnix extensions to be present
+(and thus have the driver work!).
+
+It is much faster than the 1541! But i will also work on making it much faster
+again very soon.
+
+Paul Gardner-Stephen (18 May 1997)
+gardners@ist.flinders.edu.au
+
+
+begin 644 64net2
+M__\``04`QMD"`!Q``$RM$```````````````````````````````````````
+M`````````````````#8T;F5T9')VJ1`@49!,2!"MH,+)`/`-H`^YH,+P$(@0
+M^$R<$*DPC:#"H`!,:Q"I-IF@PJ8"O0#"F;#"JJP`$*DFF0##F0'#F0+#F0/#
+MF03#F07#H`"YWA/P!R!ID,A,C1!,&)"B`+V@$_`'(&F0Z$R>$$P8D(;9A-J.
+MFQ.,G!.I1B#U$JE,(/42J44@]1*@`+'92"#U$FC)`/`#R-#R("`3R?_P&LG^
+M\!$@(!,@(!,@(!,@(!.I$4R3$:D$3),1("`3("`3R0#P#\D!\`L@(!,@(!.I
+M#TR3$2`@$R`@$XV>$WBF`B`PD%B0!:D#3),1C9T3J48@]1*I3"#U$JE2(/42
+MK9L3A=FMG!.%VJ``L=E((/42:,D`\`/(T/*MG1.%VJD`A=FMG1,8;9X3C9\3
+M>*``("`3D=G(T/CFVJ7:S9\3T.]8K9T3A=J@`)'9F,B1V<B1V<B1V:V=$QA@
+M.&!@CI<3(-P2F"#U$J6W(/42I;?)`/`,H`"QNR#U$LC$M]#VI;D@]1),$!(@
+M(!.%V2`@$X7:H`"M#=VM#=VIDXT`W:D0+`W=\/NM`=V1V<BM#=VIEXT`W:D0
+M+`W=\/NM`=V1V<C`_M#2J9.-`-VI$"P-W?#[3!`2J4P@]1(@(!/)]?"HR?30
+M`TQ&$\GW\.G)]O`OR?_P-\G^\`O)^?`7R?C0VDR@$B`@$\D`&/`!.*Z7$ZR8
+M$V`@(!,@Y/\@]1),$!(@(!,@5_$@]1),$!*I_R`@$\D!\`-,M1*I`(V9$R`@
+M$XV6$R`@$X79("`3A=JNEA.@_\C*\!(@(!-(J32%`6B1V:DUA0%,AQ),$!(@
+M(!,@(!,@(!,@(!,@(!,@(!-,$!(@(!.-EA,@(!.%V2`@$X7:("`3KI83H/_(
+MRO`(L=D@]1),S1),$!*I`(T#W:D`C0'=8*D`C0/=K0#="02-`-U@2*G_C0/=
+M:(T!W:T-W:F3C0#=J1`L#=WP^ZF7C0#=J0"-`]VI$"P-W?#[8*T-W:F3C0#=
+MJ0"-`]VI$"P-W?#[K0'=2*F7C0#=J1`L#=WP^VA@("`3A=D@(!.%VJ``K0W=
+MJ?^-`]VQV8T!W:T-W:F3C0#=J1`L#=WP^\BQV8T!W:T-W:F7C0#=J1`L#=WP
+M^\C`_M#2J9.-`-VI`(T#W4P!$@(`````!P``````-C1.150O,B!$4DE615(@
+M1D]2($Q53DE8,"XQ4#0-1%))5D4@5$%"3$4@1E5,3"`M($-!3DY/5"!,3T%$
+M#0`V-$Y%5"\R($12259%4B!&3U(@3%5.25@P+C%0-"!)3E-404Q,140-*$,I
+;4$%53"!'05)$3D52+5-415!(14X@,3DY-PT`
+`
+end

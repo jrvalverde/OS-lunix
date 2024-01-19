@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//AdvaSoft//DTD HTML 2 extended 960415//EN">
+<HTML>
+<HEAD>
+ <TITLE>LUnix Applications</TITLE>
+</HEAD>
+
+<BODY>
+<CENTER><H1><STRONG>LUnix Applications</STRONG></H1></CENTER>
+<HR>
+
+<H3>Sources and new stuff</H3>
+ 
+ <UL>
+  <LI><A HREF="doc/ldbdoc.txt">LUnix debugger version 1.0 </A> <I> (uuencoded
+  with docs)</I> 
+  <LI><A HREF="src/ldbsrc.txt">Source of ldb</A> 
+  <LI><A HREF="doc/cattee.txt">New cat and tee commands</A> <I> (uuencoded
+  with docs)</I> 
+  <LI><A HREF="src/catsrc.txt">Source of cat</A> 
+  <LI><A HREF="src/teesrc.txt">Source of tee</A> 
+  <LI><A HREF="src/t9600src.txt">Source of term9600 </A><I>LUnix-Terminalserver
+  (i should better call it &quot;<B>getty</B>&quot;)</I> 
+  <LI><A HREF="src/init.a">Source of old init.exe </A><B>in luna format</B> <I>(manages
+  console screen)</I> 
+  <LI> <A HREF="src/kernel.inc">kernel.inc</A> - include file for LUnix V0.1 (luna v1.16 needed!)
+  <LI> <A HREF="src/cbm_bios.h">cbm_bios.h</A> - include file, defines C64's bios functions  
+  <LI> <A HREF="doc/uuencode.doc">uuencode</A> (<A HREF="src/uuencode.a"><STRONG>luna</STRONG></A>) 
+  <LI> <A HREF="doc/uudecode.doc">uudecode</A> (<A HREF="src/uudecode.a"><STRONG>luna</STRONG></A>)
+  <LI> <A HREF="doc/sh.doc">new shell</A> (<A HREF="src/sh.a"><STRONG>luna</STRONG></A>) 
+  <LI> <A HREF="doc/xargs.txt">xargs</A> (<A HREF="src/xargs.txt"><STRONG>luna</STRONG>) </A> pre-release of xargs for LUnix
+  <LI> <A HREF="src/init.txt">init</A> (<STRONG>luna</STRONG>) sourcecode of "init.exe".
+  <LI> <A HREF="src/memmap.s">memmap</A> monitors memory map (fullscreen) 
+  <LI> <A HREF="src/memdump.s">memdump</A> print hexadecimal memorydumps
+  <LI> <A HREF="src/tcpip.s">tcpip</A> Sourcecode of TCP/IP Stack (alpha)
+  <LI> <A HREF="src/swslip.s">swslip</A> Sourcecode of SLIP over Swiftlink packetdriver (alpha)
+  <LI> <A HREF="src/inetstat.s">inetstat</A> Sourcecode TCP/IP status monitor
+  <LI> <A HREF="src/telnet.s">telnet</A> Sourcecode telnet client (alpha)
+ </UL>
+
+
+<P>I know there are some people out there, that already played with LUnix
+and perhaps wrote some nice little applications. If you are one of these
+people, you should eMail those apps with some little docs to <A HREF="mailto:daniel.dallmann@studbox.uni-stuttgart.de">me</A>,
+i'll put them on this page ! This would help other people getting the *best*
+LUnix-System available on this planet :-) </P>
+
+<H3>Some applications i have received:</H3>
+
+<UL>
+  <LI>sent by <A HREF="http://newton.physics.metu.edu.tr/~filker/cbmsoft.html">Ilker Ficicilar</A>
+  <UL>
+    <LI> <A HREF="http://hld.c64.org/poldi/lunix/addon/if_mips.txt">MIPS.txt</A> <EM>(million instructions per second)</EM>
+    <LI> <A HREF="addon/if_ed.txt">Pre-release</A> of his text editor (ED) 
+    <LI> Screen driver for the VDC (on a C128) <A HREF="addon/if_vdctty.txt">vdctty</A>
+    <LI> <A HREF="http://hld.c64.org/poldi/lunix/addon/if_speed.txt">Speed-Tools for LUnix</A> <EM>(for C128 in C64mode)</EM> 
+    <LI> <A HREF="addon/if_fasthead.txt">Fasthead</A> tool to speed up disc access (1541).
+    <LI> <A HREF="addon/if_autolunix.txt">Autolunix</A> make autoboot disc (C128 only)
+    <LI> <A HREF="addon/if_flicktty">Flicktty</A> 80 column display (VIC) for LUnix
+  </UL>
+  Ilker's executables (ed, fast, fast128, mips, slow, slow128, vdctty) <A HREF="addon/if_bin.tgz">if_bin.tgz</A><BR>
+  Check out his <A HREF="http://newton.physics.metu.edu.tr/~filker/cbmsoft.html">web page</A> for
+  patches or new stuff.
+  <P>
+
+  <LI>sent by Stefan Haubenthal
+  <UL>
+    <LI><A HREF="addon/sh_clear.luna"> clear.luna </A> <I> (clears the screen)</I>
+    <LI><A HREF="addon/sh_pwd.luna"> pwd.luna </A> <I> (prints name of &quot;current/working directory&quot;=drive number)</I>
+    <LI><A HREF="http://hld.c64.org/poldi/lunix/addon/sh_ident.lha"> ident.lha (luna)</A> <EM> (ident - identify files (RCS and Amiga compatible))</EM>
+    <LI><A HREF="http://hld.c64.org/poldi/lunix/addon/sh_date.txt"> date.txt (luna)</A> <EM> (reads real time clock of CIA at $dc00) </EM>
+  </UL>
+  Stefan's executables (clear, date, ident, pwd) <A HREF="addon/sh_bin.tgz">sh_bin.tgz</A>
+  <P>
+
+  <LI>sent by Paul Gardner-Stephen <I>(64NET Author)</I> 
+  <UL>
+    <LI>cat,cd,disk,echo,ls,more,reboot,renice,rm,tee <I>(all coming with lunix v01p3)</I>
+    <LI><IMG SRC="NEW.gif" ALT="[new] "><A HREF="doc/64net2.txt"> 64net2</A> (<STRONG><A HREF="src/64net2.src">luna</A></STRONG>)
+  </UL>
+</UL>
+
+<HR>
+<CENTER><H3><A HREF="lunix.html">Back to the Lunix homepage (in germany)</A></H3></CENTER>
+</BODY>
+</HTML>

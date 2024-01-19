@@ -1,0 +1,67 @@
+Pipes :
+=======
+  Jede Pipe wird durch 32 Byte beschrieben :
+    Byte 0 : Empfaenger PID
+    Byte 1 : Pipe Type Byte (PTB)
+    Byte 2 : Read Pointer  (RP)	  * Zeigt auf das letzte gelesene Byte im Puffer
+    Byte 3 : Write Pointer (WP)	  * Zeigt auf das letzte beschriebene Byte im Puffer
+    Byte 4 : SPC		  * Zaehlt die sendenden Prozesse
+
+    die folgenden Bytes sind je nach Pipe-Type verschieden belegt ...
+
+	       Byte-Pipe	     Page-Pipe
+    Byte 5 : Puffer		   Read Pointer (Lo) (RPL)
+    Byte 6 : Puffer		   Write Pointer (Lo) (WPL)
+
+    Bytes 7...31  Puffer	   Pointer auf Puffer-Page
+
+    Es ergeben sich damit folgende Puffergroessen :
+	     27 Byte fuer die Byte-Pipe
+    und	   6400 Byte fuer eine Page-Pipe
+
+  Pipe Type Byte (PTB) :
+    Auflistung der Bit-Belegung
+    Bit 0  : fuell Bit (bei belegter Pipe immer "1")
+    Bit 1  :
+    Bit 2  :
+    Bit 3  : Shrink-Bit	 * Ist dieses Bit gesetzt wird die Pipe nach aussen als
+			   voll betrachtet,und auf diese Weise so lange 'geschrumpft',
+			   bis sie leer ist und in eine Byte-Pipe umgewandelt werden kann
+			   (-> Special Byte Pipe )
+    Bit 4  : Empty-Flag	 * Wird gesetzt,wenn die Pipe leer ist
+    Bit 5  : Full -Flag	 * Wird gesetzt,wenn die Pipe voll ist
+    Bit 6  : Special	 * Hat verschiedene Funktionen :
+			    Byte-Pipe : gesetzt,wenn Special Byte Pipe
+    Bit 7  : Type-Bit	 * 0 -> Byte-Pipe
+			   1 -> Page-Pipe
+
+  Implementierung :
+
+    - Wird beim Versuch zu schreiben entweder durch das Full-Flag oder durch Probieren
+	ein Ueberlauf erkannt,dann wird der Aktuelle Prozess geBLOCKED,der
+	entsprechende WaitState gesetzt und in die IRQ-Routine geprungen.
+      -> War der Empty-Flag gesetzt,so werden alle eventuell wegen Empty-Pipe
+	 geBLOCKEDte Prozesse wieder in den Zustand RUNNING (bzw. BLOCKED/READY)
+	 ueberfuehrt und das Empty-Flag geloescht.
+    - Dem entsprechend wird beim Versuch zu Lesen (durch Flag ?) ein Unterlauf
+	festgestellt,wird das Empty-Flag gesetzt und der aktuelle Prozess geBLOCKED
+	sowie das entsprechende WaitState gesetzt.
+      -> War das Full-Flag gesetzt,so wird dieses geloescht und alle deshalb geBLOCKEDten
+	 Prozesse freigegeben.
+    - Wird beim anlegen einer Page-Pipe keine freie Page gefunden,wird behelfsmaessig
+	eine Special Byte Pipe angelegt
+      -> Bei jedem Ueberlauf versucht die Special Byte Pipe sich in eine Page Pipe
+	 umzuwandeln (Vorausgesetzt das Shrink Bit ist nicht gesetzt)
+
+
+Verwaltung der Pipes :
+======================
+  Jedem Pipe ist eine Pipe-Nummer zugeordnet (1-255)
+  Wobei die Pipenummer 0 die NULL-PIPE ist (Das Schwarze Loch !)
+  Das Betriebssystem hat eine Pipe-Hash-Tabelle in der die Pipe-Pointer abgelegt sind.
+  Die 32Byte Pipe-Beschreiber werden dynamisch im Speicher abgelegt (Je 8 in einer Page)
+  Da das Btr.System diese Pages verwaltet und alleinigen zugriff hat kann es diese
+  beliebig im Speicher verschieben,falls ein anderes Programm dies verlangt.
+  Schliesst der Empfaenger die Pipe,dann wird die Empfaenger PID auf 00 gesetzt.
+  Die Pipe jedoch noch nicht wieder freigegeben ! Die Freigabe erfolgt erst,wenn sich
+  alle sendenden Prozesse abgemeldet haben.

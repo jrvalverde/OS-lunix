@@ -1,0 +1,692 @@
+
+                      .d#M*#MHb\
+           M?        dH*"     `Hb.
+           TM.     ,MH'        `M|
+            9b.   .MH'         JM:   LUnix-Version 0.1 patchlevel 3b
+             ?M,  HM'         ?M'    ===============================
+              `*M#ML___.__,o#H''              Oct 5, 1996
+                 HH'"'"""*"''
+                :M'
+                HP                                      ,/#
+               |M'          ,.                          `"`
+               dH          .H       ..  .o. .ov\o\      .,   .o,            ,,
+    ___.      JM'          d|       H'   ``dP    `\.    |?    `H,         .d#'
+ .dM#**HMq\. ,MT          ,P       JT     -M|     ||    &      `H?       ?M'
+ JP'    ``9H\?M'          ||      .H'      M|     ||    6       `9b.   ,HH'
+ MR        `9M6           :?      |M       M|     ||    M         ?H, ?M'
+ HM         JM*H\          `booov="9?      M|     ||    9.         `MHH"
+ `Hb.     _dH' `*9b\.               "     |MT      H.   ||        ,HP>&o.
+   `#H###H"'      `*##\.                  `'             '     .,H*'   `Hb.
+                     `"#Hb\_                                _?#*''       "*&#o
+                          "*Hbbo\__                  __oo##*""              "'
+   Index                      `"'***M=###booooobd##&*""""
+============                            ""'
+
+ 1. What the hell is LUnix ?
+
+ 2. How to start LUnix ?
+
+ 3. Files/Applications comming with LUnix
+
+  3.1 The LUnix-Shell (sh0.exe, the default-shell)
+  3.2 The LUnix-Netdriver
+  3.3 The LUnix debugger LDB
+
+ 4. Where can i get the lastest version of LUnix and/or updates, patches ?
+
+ 5. Can i write my own LUnix-applications ?
+
+
+-------=============#####################################==============-------
+
+
+1. What the hell is LUnix ????
+==============================
+
+ LUnix is a new operating system for the Commodore64 (or C128 in C64-mode).
+ I started  writing LUnix  in  1994.  The  system  core is a minimal
+ implementation of a multitasker. I followed an idea of A. Einstein, 
+ who said:
+
+    "Make is as simple as possible, but not simpler"
+
+ I'd say LUnix tends to be a little bit too simple :-)
+
+ - LUnix is a operating system for the C64 (no hardware expansions required)
+   (LUnix stands for "little UNIX", well don't expect too much :)
+   LUnix doesn't support additional hardware yet, the next version will
+   be able to support external RAM (assuming someone will write a modul/driver
+   for it).
+
+ - LUnix provides real multitasking, so there can be more than one process
+   at a time. (Up to 32 processes. LUnix can't swap out stopped processes,
+   so all of them must fit into main memory at once. The next version will
+   support process-data in external RAM)
+
+ - Using the termial-server "term9600" you can connect a terminal (via RS232)
+   to your C64 and have a second user online on your C64.
+
+ - Dynamic memory management. (only internal memory, bank0)
+
+ - A small kernal but multipurpose. (well i hope so :-)
+
+
+ What for, why ??
+ ================
+
+ A real C64-freak always wants to do the impossible, thats one of
+ the main reasons, why i started writing LUnix. Many peaople think, that
+ UNIX (multitasking/multiuser) can only run on big workstations with lots
+ of megabytes RAM and gigabytes of discspace. I want to have (a kind of)
+ UNIX on my little C64, having only 64kbyte and a normal 171kbyte-1541floppy.
+ My dream would be, that people agree with me, that this isn't only fun
+ but also makes sense.
+
+
+2. How to start LUnix :
+=======================
+
+ Get the archivefile "lunix01p3b.c64" into your C64 and run it. Its a self
+ extracting archive. Start it like  a  normal basic-programm, it will then
+ save all the lunix-files to device 8 of your C64 (e.g. your 1541-floppy).
+ After  all the  files have  been extracted, you can  start LUnix by using 
+ the boot(-BASIC)-programm called "loader".
+
+   load"lunix01p3b.c64",8
+   ...
+   run
+
+ then
+
+   load"loader",8
+   ...
+   run
+
+ and follow the prompts.
+
+
+3. Files comming with LUnix:
+============================
+
+Systemfiles
+-----------
+
+loader      o A BASIC programm that loads and starts LUnix.
+
+lunix.sys   o The LUnix system core.
+
+bootdrv.drv o The bootdriver that  the system will use  to  load  the  first
+              command shell.
+
+init.exe    o The screen manager (console)
+
+
+3.1 Applications
+----------------
+
+sh0.exe     - sh0.exe
+
+              Invokes another (sub-) command shell.
+
+a1541       - a1541
+                          Replaces  the  normal disc-driver by a IRQ-loader.
+                          You  must enable this  driver before accessing the 
+                          RS232. (eg. before running "term9600").
+
+cat         * cat <file>
+
+                          Prints a file to stdout.
+
+cd          * cd <directory>
+
+                          Changes the working directory.
+
+count       - count
+
+                          Counts up from <000>  to <255> and put the numbers
+                          to stdout. Just makes some noise :)
+
+disk        * disk
+
+                          Prints the disk-status information to stdout.
+
+echo        * echo <text>
+
+                          Prints text to stdout.
+
+hexconv     - ... ! hexconv
+
+                          Converts    decimal   numbers    from   stdin   to 
+                          hex-numbers  (stdout).    Usable   as   a  filter.
+                          E.g. "ps ! hexconv"
+                      >>  A "!" separates two (or more) commands so that the 
+                          output of the first  command will be used as input 
+                          of the second command.
+
+kill        - kill <pid>
+
+                          Kills a process. (PID=Process IDentification). You
+                          can get the PIDs by using the "ps"-command.
+
+ldb         - ldb
+
+                          LUnix debugger. Details about its usage below.
+
+ls          * ls [-l]
+
+                          Prints the disk-directory to stdout.
+
+man         - man
+
+                          Prints a very little manual to stdout.
+
+mem         - mem
+
+                          Prints  a little statistic about the system-memory 
+                          usage.
+
+memfree     - memfree &
+
+                          Shows the  amount of  free  memory  in  the  right
+                          corner of  the screen.  You  should start  it this 
+                          way: "memfree &"
+
+                      >>  The  "&"  at the  and  of  a  line  means that the 
+                          command will  run in  the background and the shell  
+                          won't  wait  till  the   execution  is  completed.
+
+mirror      - ... ! mirror
+
+                          It  will  mirror  lines  from  stdin  and put them 
+                          (mirrored) to  the stdout.  (should  only  be used 
+                          in combination with "!").
+
+more        * ... ! more
+
+                          Pass  stdin  to  stdout,  asks  for  a  key  after 
+                          printing 11 lines.
+
+net.drv     - net.drv <NID>
+
+                          Enables  access  to  a  local   C64/128   network.
+                         (NID=Network IDentification of the local computer).
+
+netstat     - netstat
+
+                          Prints statistics about the C64/128 network.
+
+prim        - prim <a>,<n>
+
+                          Prints n prime numbers beginning with a.
+
+ps          - ps [-la]
+                          Prints a report  about (-a -> "all")  processes in 
+                          the system. The option "-l" will make 'ps' do this 
+                          in a more detailed way.
+
+reboot      * reboot
+
+                          Causes a RESET of the computer.
+
+renice      * renice [<PID>[,<pri>]]
+
+                          Prints/changes the priority of a process.
+
+rm          * rm <file>
+
+                          Removes (deletes) a file.
+
+rsh         - rsh <NID>
+                          Calls for  a  shell on an other  computer (NID) in 
+                          the C64/128-net.
+
+rshserv     - rshserv [-v] &
+
+                          Shellserver,  serves shells  to other computers in 
+                          the C64/128-net. (Up to 4 at a time)
+
+tee         * tee <file>
+
+                          Writes stdin to a file.
+
+term9600    - term9600 [-v] &
+
+                          Terminalserver,  serves  shells  to   a   terminal 
+                          connected to the RS232. (uses a  special userport-
+                          RS232-interface  9600Baud  8N1).  Never  forget to 
+                          start  "a1541"   before   starting  the  terminal-
+                          server !!!
+
+top         - top
+
+                          Examines  the system  and print  a sorted  list of 
+                          processes  and their  use of  CPU time. SPACE will 
+                          restart  the  examination, any other key ends top.
+
+wc          - ... ! wc
+
+                          Counts chars, words and line from stdin and prints 
+                          a report to stdout.
+
+write       - write [-q] <PID>
+
+                          Writes  a  massage to  an other shell (PID of that 
+                          shell  has to  be specified).  CTRL+D ends  write.
+
+
+Remarks
+-------
+
+            o = file can't be used as a LUnix command.
+            - = commands written by the author himself.
+            * = commands written by Paul Gardner from australia.
+
+ As you might have noticed, there are no (very) usefull applications.
+ (exept ldb) Thats because i don't have that much fun writing applications
+ than writing kernel-code :-)
+ Usefull may be writing the directory into a file "ls ! tee filename" or
+ calculating some primenumbers and write them into a file
+ "prim 100,10 ! tee primenumers". Maybe you find it usefull to
+ translate all decimals in a textfile into hexadecimals, this would be
+ no problem "cat infile ! hexconv ! tee outfile".
+
+ I plan to write a TCP/IP-stack for the next version of LUnix, that
+ would be something quite usefull i think.
+
+
+3.2 The command shell (sh0.exe)
+===============================
+
+<command>
+  will load and execute a command, wait till its done.
+
+<command> ! <command> { ! <command> }
+  load all and execute them parallel, passing stdout of the first to stdin
+  of the second command and so on, wait till the last command is done.
+
+... &
+  A "&" at the end of a command line lets the shell go on without waiting
+  till the command line is done.
+
+exit or CTRL+d
+  Ends a shell.
+  ( CTRL+d is the EOF0"end of file" charakter, it also ends wc, write,
+  hexconv,..)
+
+
+3.3 The LUnix-net-driver :
+==========================
+
+ The net-driver  lets  you  connect  up  to  6 C64/128  all  running  LUnix.
+ It sends and receives datapackets. There can be several virtual connections
+ between all stations of the net at the same time.
+ The only  service that  is  implemented yet, is a shell-serving process, it 
+ allows remote shells (up to 4 per computer).
+ (The net-sytem supports up to 7 services).
+
+
+ What do i need to run this net-driver ?
+ ---------------------------------------
+
+ - You should have at least one C64/128
+   (but you'll have much more fun, if there are more of them)
+
+ - You need at least LUnix_v0.1p2 .
+   and the following files : "net.drv","rshserv","rsh","netstat"
+   you can get all of them (and even more) for free through
+   the Internet (a list of addresses is appended to this file)
+
+ - And you need a suitable cable ! (if you use more than 1 C64 :)
+   You have to connect (at least) GND, PB0, PB1, PB2, PB3, PB6
+   (all from the C64's userport) of all C64 in the net, the software
+   supports up to 6 C64 (or C128) in the net.
+
+   *** if you have only one discdrive you'll need a switch to connect/
+           disconnect one of the pins to ground (eg. PB0).
+           Use a little resistor (about 470-1000 Ohms) to connect the
+           certain pin to ground.
+           If the connection is switched 'ON' all the communication
+           in the net is disabled.
+
+
+ How to start it :
+ -----------------
+
+ - First unplug all the computers and discdrives/monitors...
+
+ - Then connect the userport-pins (you should try to connect each GND-pin
+   first)
+
+ *** only one discdrive: connect GND to the discdrive (!),to
+         prevent damage when connecting/disconnecting it to one computer
+         after the other later.
+
+ - Now shitch them all on.
+
+ - Load and start LUnix,
+   press 'add a session' ,type "net.drv X" X is the ID of the station.
+   This ID ranges from 1 to 6 (don't use the same ID twice !)
+   Then enable logins from other computers to this computer by starting
+   the remote-shell-server process by typing 'rshserv -v &'
+   (-v is not neccessary).
+                        <-do this with every computer you have connected .
+
+ Thats it ! The net is now active.
+
+
+ How to use the net
+ ------------------
+
+ You can use the net to execute shells on other (or the local) computer.
+
+ Just type "rsh X" (X- is the ID of the destination computer)
+ and you should get a 'remote shell' from that computer to work with :)
+ The actual 'rshserv' process enables up to 4 remote-logins at a time
+ (it doesn't matter from what computer you are calling)
+
+ Type 'exit' to logout again.
+
+
+ *** only one discdrive:
+         You can use one of the computer to work as server (this will be
+         the only computer with a discdrive later)
+         You just have to start "rsh"s on the other computer in direction
+         to the server.
+         But how to do that, if there is only on discdrive available ?
+         Thats what the mentioned shitch is for !
+         Switch 'ON' (and block all net actions), then connect the discdrive to
+         one of the other computers and type "rsh Y" (Y is the servers ID)
+         connect the drive to the next computer...and so on...then connect the
+         discdrive to the 'server' and switch 'OFF' !......
+
+
+3.4 ldb - LUnix debugger version 1.0
+====================================
+
+Available (commandline-) commands:
+ 
+ b 
+   break 
+     Send character (ascii code 3) to debugged process.
+
+ c
+   continue
+     Continue process (CTRL+s stopps it)
+
+ d [[ mid: ] address ]
+   disassemble 
+     Disassemble process-code (or any other memory address).
+     With no argument d continues disassembling at the last position.
+     Default for mid is the process' mid.
+     Address is the relative address in the mid-memory area or, if no
+     mid is given the address is relative/absolute/original to the
+     process' startaddress (as defined by the used with the 'm'-command).
+
+ f dev:filename
+   file
+     Load exacutable file for debugging.
+
+ h [[ mid: ] address ]
+   hexdump
+     Print a hexdump, syntax like 'd'
+
+ i
+   info
+     Print process information
+
+ m[aro]
+   mode
+     ma absolute memory addresses
+     mr relative memory addresses
+     mo original memory addresses
+      (display mode of disassembler)
+
+ r [ args ]
+   run 
+     Run a loaded process with 'args' as commandline parameters.
+
+ s #signum
+   signal
+     Sends signal #signum to debugged process.
+
+ t
+   tick
+     Lets the debugged process run for exactly one time slice.
+     (or till there is a 'jsr$$9012' in the code, wich can be used
+      like breakpoints for debugging)
+     NOTE: ldb waits till the process is interrupted while running
+           (if the process is blocked ldb will wait till it is
+            unblocked again)   
+
+examples:
+---------
+
+@> ldb
+LUnix Debug Version 1.0
+  by Poldi  4.3.1996
+ldb> f @:prim            { load 'prim' }
+ldb> r 10000,10          { prim 10000,10 }
+ldb> i                   {info}
+pc=38:0046 sr=00  a=00 x=00 y=00
+ { mid:reladr ,status register,akku,x-register,y-register }
+stack 17 90
+ { $9018=suicide is the return-address, if there is a rts }
+zp 57 8d 38 35 30 3a 8e 00 59 2f 8d
+ { zero page starting with address $57: ...10 bytes }
+ldb> d 38:46
+ { begin disassembling at pc=38:0046 taken from info }
+$c846 lda#$c8
+$c848 jsr$$9051
+$c84b jmp$$c991
+$c84e rts
+$c84f lda#$00
+$c851 sta$$59
+$c853 sta$$5a
+$c855 sta$$5b
+$c857 sta$$5c
+$c859 ldii$57
+ldb> mr   { switch to relative-address-mode }
+ldb> h 0  { hexdump starting at relative addr. 0 }
+$0000  38 f5 fa fa 00 00 00 00 8UZZ....
+$0008  00 46 00 00 00 00 00 00 .f......
+$0010  00 00 00 00 00 00 00 00 ........
+$0018  00 00 4c 1b 90 00 00 00 ..l.....
+$0020  00 00 00 00 00 00 00 00 ........
+$0028  00 00 00 00 00 00 00 00 ........
+$0030  00 00 00 00 00 00 00 00 ........
+$0038  50 52 49 4d 00 00 00 00 prim....  { 'prim' CMD name in the file }
+$0040  17 27 00 00 80 00 a9 c8 .'....)h
+$0048  20 51 90 4c 91 39 60 a9	q.l.9@)
+ldb> f @:ldb  { load 'ldb' }
+ldb> mo { switch to original address-mode }
+ldb> d  { disassemble code }
+$7000  38 00 00 00 40 57 06 00 8...@w..
+$7008  1c 40 00 00 00 00 00 00 .@......
+$7010  00 00 00 00 00 00 00 00 ........
+$7018  00 00 4c 48 70 4c 52 70 ..lhPlrP
+$7020  00 00 00 00 00 00 00 00 ........
+$7028  00 00 00 00 00 00 00 00 ........
+$7030  00 00 00 00 00 00 00 00 ........
+$7038  4c 44 42 00 00 00 00 00 ldb.....
+$7040 lda#$70
+$7042 jsr$$9051
+ldb> d { continue disassembling }
+$7045 jmp$$79aa
+$7048 se i
+$7049 lda#$03
+$704b ldx$$7001
+$704e jsr$$902d
+$7051 rti
+$7052 jmp$$901b
+$7055 pjp$$70a2
+$7058  30 31 32 33 34 35 36 37 01234567
+$7060  38 39 41 42 43 44 45 46 89abcdef
+ldb> d { continue disassembling }
+$7068  01 04 07 0a 0d 10 13 16 ........
+$7070  00 00 00 00 00 00 00 00 ........
+$7078  00 00 00 00 00 00 00 00 ........
+$7080  00 00 00 00 00 00 00 00 ........
+$7088  00 00 00 00 00 00 00 00 ........
+$7090  00 00 00 00 00 00 00 00 ........
+$7098  00 00 00 00 00 00 00 00 ........
+$70a0  00 00		       ..
+$70a2 and#$3f
+$70a4 =	 $$70d2
+ldb> d { continue disassembling }
+$70a6 cmp#$20
+$70a8 bcs$$70ac
+$70aa ora#$40
+$70ac jsr$$9069
+$70af bcc$$70d2
+$70b1 jsr$$70b7
+$70b4 jmp$$901b
+$70b7 bit$$7071
+$70ba bpl$$70d2
+$70bc lda$$7075
+----------------------------------------
+ldb> f @:prim    { load file 'prim' }
+ldb> r 10000,10  { exec 'prim 10000,10' }
+ldb> i           { info }
+pc=2d:0046 sr=00  a=00 x=00 y=00
+stack 17 90
+zp 57 38 a9 20 20 ac 38 a6 57 e8 86
+ldb> t           { let prim run for one tick }
+ldb> i           { print info agin }
+pc=2d:0170 sr=23  a=00 x=00 y=04
+stack 3d 2f 17 90
+zp 57 0a 00 d0 01 00 00 01 01 00 00
+ldb> t
+ldb> i
+pc=2d:0154 sr=23  a=00 x=00 y=07
+stack 3d 2f 17 90
+zp 57 0a 00 80 03 00 00 13 04 00 00
+ldb> t
+ldb> i
+pc=2d:0158 sr=23  a=00 x=00 y=02
+stack 3d 2f 17 90
+zp 57 0a 00 e4 00 00 00 af 01 00 00
+ldb> t
+ldb> i
+pc=2d:014b sr=22  a=ff x=00 y=0e
+stack 3d 2f 17 90
+zp 57 0a 00 00 40 1c 00 17 27 00 00
+ldb> t
+10007    { a prime number calculated by prim after 5 ticks } 
+ldb> i
+pc=2d:017b sr=21  a=00 x=09 y=04
+stack 3d 2f 17 90
+zp 57 09 00 60 02 00 00 79 01 00 00
+ldb> s
+s #signum   (1..16)
+  sends signal to process
+ldb> s 7  { send signal 7 'killed parent' }
+process doesn't support this signal
+ldb> s 6  { send signal 6 'user break' }
+ldb> t    { another tick.. }
+Process died    { process caught the signal and ended }
+ldb> i  
+No file loaded
+ldb> x    { exit from ldb .. back to shell }
+@>
+
+
+disassembler notes:
+-------------------
+  The assemblersytax may look strange to you, because it is based on
+  an old assembler i wrote (it was easier to use it's disass-tables as
+  writing some new, wich i may do somewhen in future).
+
+   lda#$12  
+       ---
+        parameter #12 is decimal, $12 hex, "a  ascii, <label a label
+        the parameter may be preceeded by a l (low byte) or h (high
+        byte) eg.  lda#l$1234 is the same as lda#$34 and
+                    lda#h$1234 like lda#$12.
+   ---
+    the first 3 chars define the command (like lda,sta,inc,and,...)
+       -
+        the fourth char defines the addess-mode
+             # immediate
+             $ adr
+             x adr,x 
+             y adr,y
+            ii (adr),y   (third and fourth char 'i')
+            ix (adr,x)
+
+  some examples:
+   lda#$23     is  lda  #$23
+   lda$$23     is  lda  $23
+   lda$$1234   is  lda  $1234
+   ldii$a2     is  lda  ($a2),y
+   ldax$c000   is  lda  $c000,x
+   adcx$c080   is  adc  $c080,x
+   + ii$bf     is  adc  ($bf),y
+   =  $$1234   is  beq  $1234
+   <> $$1234   is  bne  $1234
+   pjp$$1234   is  byte $0c; word $1234
+   jsr$$9012   is  jsr  $9012
+
+
+4. Where can i get the lastest version of LUnix and/or updates, patches ?
+=========================================================================
+
+ WWW:
+
+  LUnix-homepage
+   http://wwwcip.rus.uni-stuttgart.de/~etk10217/c64.html
+  or
+   http://wwwcip.rus.uni-stuttgart.de/~etk10217/lunix.html
+
+  There also is additional information about the kernel-structure.
+
+ FTP:
+
+  ftp://ftp.uni-hildesheim.de/pub/...
+  ftp://ftp.giga.or.at/pub/c64/...
+
+
+ If you need support, or have some questions/remarks/suggestions write
+ an email to me.
+
+           eMail: Daniel.Dallmann@studbox.uni-stuttgart.de
+
+
+5. Can i write my own applications ?
+====================================
+
+ Of course you can ! But you have to take care of some simple rules. 
+ A LUnix-application must have a special header, must be relocatable by
+ the system and mustn't access memory/hardware that may be used by other 
+ applications or by the system.
+ (Applications may access hardware-directly because the kernel doesn't
+ provide the neccesary routines yet)
+ Details on how to write applications can be found on my WWW-page.
+ 
+ If you want to use an other machine (linux/UNIX/amiga) for development,
+ you can use some tools i've written to help writing LUnix-applications.
+
+ there is
+  luna: a 6502/10 cross-assembler
+  lupo: a preprocessor for assembler sources
+  lld:  a linker for objectfiles created by luna
+
+ All you need is a C-compiler (i used the GNU-C-Compiler "gcc") to built
+ the executables. (Thanks to Stefan Haubenthal there is a compiled
+ version for AMIGA).
+
+ Everyone, who wants to do something for LUnix is welcomned and will get 
+ all information needed (just contact me).
+
+ If you already played around with LUnix and wrote some little applications
+ *please* send them to me, i'll include them into the patchlevel 3c release.
+
+ In fact LUnix0.1 is quite limited, thats why i'm working on a new version.
+ But it won't be released before 1997 (i'm not that far). If someone
+ likes to have more information on the next release, or better has some
+ suggestions, look at my WWW-page or write an (e)Mail.
+
+
+
+
+...and, don't forget:
+                   HAVE FUN !!

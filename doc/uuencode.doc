@@ -1,0 +1,39 @@
+uuencode
+========
+
+ compatible with GNU shareutils 4.2 (uuencode for UNIX...)
+
+ generates standard-uu and base64 decoded files.
+
+example:
+--------
+
+ LUnix: cat testbinary,p! uuencode testbin ! tee testbin.uue
+
+ UNIX: uuencode testbinary testbin >testbin.uue
+ 
+
+begin 644 uuencode
+M__\``00`QMD"`!Q``````````````````````$R9$0``````````````````
+M`````````````````%5514Y#3T1%J1`@49!,I1$LW!,P!+T_$F"]?Q)@H@`@
+M9I"P")V+$^C@+=#SBM`#3(@1CML3+-P3,`B]/Q(@:9"P&*``C-X3K=L3R0.0
+M:KF+$TI*JB!($"!ID+!JN8L3"@H*"HW=$[F,$TI*2DHI#PW=$RD_JB!($"!I
+MD+!)N8P3"@J-W1.YC1,**BHI`PW=$RD_JB!($"!ID+`KN8T3*3^J($@0(&F0
+ML!W(R,@XK=L3Z0.-VQ-,@A#)`-`5J0H@:9"P`TQ5$*X#$"!=D"R_$CA@KML3
+M\'JYBQ.-WQ/@`?`$N8P3+*D`C>`3K=\32DJJ($@0(&F0L,^MWQ,*"@H*C=T3
+MK>`32DI*2@W=$RD_JB!($"!ID+"PK=L3R0'0#BS<$S`$K3\2+*D]3&X1K>`3
+M"@HI/ZH@2!`@:9"PBRS<$S`$K3\2+*D](&F0L.ZI"B!ID"S<$S`+K3\2(&F0
+MJ0H@:9!@K@,0(%V0+&H33!N0K0@0\":%VJ``C-P3A-G(L=GP&,DMT`O(L=G)
+M3=`-SMP3R*D@T=G0#\C0^:X#$"!=D"S*$DP;D(S?$ZX"$"S<$S`)(%V0+%$3
+M3/81(%V0+%<3K@(0(%V0+&03K-\3L=GP#<DAD`D@:9#(T/),T!&I"B!ID*7:
+M('60(%40K@(0+-P3,`L@79`L@!.I`$P8D"!=D"R%$ZD`3!B0`F`A(B,D)28G
+M*"DJ*RPM+B\P,3(S-#4V-S@Y.CL\/3X_0$%"0T1%1D=(24I+3$U.3U!14E-4
+M55976%E:6UQ=7E]!0D-$149'2$E*2TQ-3D]045)35%565UA96F%B8V1E9F=H
+M:6IK;&UN;W!Q<G-T=79W>'EZ,#$R,S0U-C<X.2LO22]/($524D]2#0!U4T%'
+M13H@555%3D-/1$4@6RU-72!.04U%7T]&7T9)3$4-("!E3D-/1$4@02!"24Y!
+M4ED@1DE,12X@:4Y0550@25,-("!35$1)3BP@3U544%54($E3(%-41$]55"X-
+M#2`@+4T@55-%($)!4T4V-"!%3D-/1$E.1R!!4R!/1B!R9F,Q-3(Q#0!B96=I
+M;@!B96=I;BUB87-E-C0`(#8V-"``555%3D-/1$4@24Y415)255!4140-`&5N
+)9`H`/3T]/0H`
+`
+end

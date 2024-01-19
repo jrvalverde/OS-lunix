@@ -1,0 +1,76 @@
+LUnix "cat"-command Version 2
+
+ Cat is used to read a file and forward the data to stdout.
+
+changes:
+  Cat is now able to close the file, before EOF to let other
+  processes use the disc-drive (e.g. tee for saving).
+
+Usage:
+    cat file[,type]
+
+    type one of p, u or s (default)
+
+see also "tee".
+
+begin 644 cat
+M__\``0(`0%<#`!Q``````````````````````$Q(R$Q(R```````````````
+M`````````````````$-!5```````J<@@49!,L,@@3LA,&Y"M!,CP#B#,_ZD!
+M(,/_H@`@0I!88``````````,L,A54T%'12T-("!#050@1DE,15LL5%E015T-
+M("`@5%E013U0+%4@3U(@4R`H1$5&055,5"D-`$-!5#H@24\M15)23U(-`*T(
+MR/!/C6/(A5B@`(17R/!#L5?P/\D@\/6,8LC(\#6Q5]#YB(BQ5\C(R2SP#JDL
+MD5?(J5.15\BI`)%7J2R15\BI4I%7R*D`D5>8..UBR(UDR$P0R:X#R"!=D"QL
+MR$P;D*D`C67(C6;(C6?(H@"&5X98AEF.:,@@/Y!8K63(KF+(K&/((+W_J0&B
+M"*`"(+K_(,#_L#&B`2#&_[`JI5?-9<C0#J58S6;(T`>E6<UGR/`L(,__L!"E
+MD-`,YE?0WN98T-KF6=#6K@/((%V0+*'(3+')BBF_T.\@3LA,&)"N`L@@;Y"P
+M'3`>(,__L-KF5]`&YEC0`N99(&F0II#0U8YHR)#;3$C((!*0KFC(Z(YHR.`(
+MT,H@3LBE5XUER*58C6;(I5F-9\BI`(UHR"`2D*X"R"!OD+#-\`TP[*YHR.B.
+*:,C)!-#F3!O)`J58
+`
+end
+
+
+LUnix "tee" Version 2
+
+ Tee is used to forward stdin into a file (discdrive 8).
+
+    changes:
+      Tee is now able to close the file before all data is written
+      to let other processes use the disc-drive. (e.g. cat for loading)
+
+Usage:
+    tee [-a][-e] file[,type]
+
+     -a append to file
+     -e enable echo to stdout
+     type one of p, u or s (default)
+
+see also "cat".
+
+begin 644 tee
+M__\``0(`0%<"`!Q``````````````````````$Q(R$Q(R```````````````
+M`````````````````%1%10``````J<@@49!,Z,@@3LA,&Y"M!,CP#B#,_ZD!
+M(,/_H@`@0I!88```````#.#(55-!1T4M#2`@5$5%(%LM05U;+45=($9)3$5;
+M+%194$5=#2`@(%194$4]4"Q5($]2(%,@*$1%1D%53%0I#2`@($$@05!014Y$
+M(%1/($9)3$4-("`@12!%0TA/(%1/(%-41$]55`T`5$5%.B!)3RU%4E)/4@T`
+M`,CP++%7\"A@K0C(\"*-8\B%6*``C-_(A%<@X,C)(/#YR2W0)2#@R,E!\!#)
+M1?`/K@/((%V0+&K(3!N0J4`LJ8`-W\B-W\A,^<B,8LC(\."Q5]#YB(BQ5\C(
+MR2SP#JDLD5?(J5.15\BI`)%7J2R15\BI5RS?R%`"J4&15XQER,BI`)%7F#CM
+M8LB-9,A,;LD@X\E(H@`@/Y!8K63(KF+(K&/((+W_J0&B"*`"(+K_(,#_L"BL
+M9<BI09%7H@$@R?^P&F@@TO^P%*60T!"N`<@@;Y"P$?`2(./)3*')K@/((%V0
+M+-#(3$C(J0B-9L@@$I"N`<@@;Y"P[=#<SF;(T.X@3LA,;LD@9I"PVRS?R!`)
++R03PTB!ID+#-8`(@
+`
+end
+
+
+Examples:
+
+  cat file1 ! filter ! tee file2
+    transform file1 into file2 using "filter" (e.g. hexconv, uudecode,...)
+  ps -la ! tee processes
+    Write list of procresses into the file "processes"
+
+
+ Written by Poldi 17.3.1996
+    <Daniel.Dallmann@studbox.uni-stuttgart.de>

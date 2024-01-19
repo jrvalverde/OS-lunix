@@ -1,0 +1,754 @@
+------------------------------------------------------------
+*** FILE ".t9.0"
+
+	  ptr=#2
+	  hlp=#4
+	  move=$9051
+	  break=$9012
+	  pipout=$902d
+
+	  ;  connector - xlink
+
+
+
+	  ;   org $c800
+	  ;  version
+	  @1#0
+	  @1#1
+	  ;  pages
+	  @1#07
+	  nop
+	  ;  stackmax
+	  @1#63
+	  ;  zp-start
+	  @1#251
+	  ;  zp-len
+	  @1#0
+	  nop
+	  ;  start-vektor
+	  @1$2c
+	  @2$0040
+	  ;  restl.vektoren
+	  use45;vektoren
+	  ;  prg-descr
+	  text "term9600"
+
+
+	  use1;flag;sh.in;sh.out
+	  use8;username
+	  @1#0
+
+strt:	  lda  #$c8
+	  move
+start:	  jmp  64738
+
+	  #add t9lab flag sh.in sh.out username ptr hlp break
+	  #next t9.1
+
+------------------------------------------------------------
+*** FILE ".t9.1"
+
+	  #include t9lab
+	  #rm rsout enable disable rsin
+
+	  ;   experimantal rs232
+
+	  ;   using cia-serial-ports
+	  ;   start is variable !
+	  ;    (for LUnix-terminal server)
+
+	  lunix.irq=$9121
+	  revtab=$cd80
+	  recbuf=$ce00
+	  sndbuf=$cf00
+	  ;   uhh change it later !
+	  pjp  ovlocal
+	  use1;outstat;flags
+	  use1;outbyte
+	  use1;wr.sptr;rd.sptr
+	  use1;wr.rptr;rd.rptr
+
+ovlocal:
+nmi-startbit:
+	  pha
+	  lda  #$13
+	  bit  $dd0d
+	  bpl  restore
+	  sta  $dd0f
+	  sta  $dd0d
+	  ;	adapt this by hand !!
+	  lda  #$c2
+	  sta  nmilo
+	  pla
+	  rti
+
+restore:  ;  just ignore restore
+	  pla
+	  rti
+
+nmi-bytrdy:
+	  pha
+	  lda  #$92
+	  bit  $dd0d
+	  bpl  restore
+	  sta  $dd0f
+	  sta  $dd0d
+	  lda  #<nmi-startbit
+	  sta  nmilo
+	  txa
+	  pha
+	  lda  $dd0c
+	  cmp  #128
+	  and  #127
+	  tax
+	  lda  revtab,x
+	  adc  #0
+	  ldx  wr.rptr
+	  sta  recbuf,x
+	  inx
+	  stx  wr.rptr
+	  se c
+	  txa
+	  sbc  rd.rptr
+	  cmp  #200
+	  bcc  nosetrts
+	  lda  $dd01
+	  and  #$fd
+	  sta  $dd01
+nosetrts: pla
+	  tax
+	  pla
+	  rti
+
+absadrs:  bit  new.irq
+	  bit  nmi-startbit
+
+disable:  lda  #$7f
+	  sta  $dc0d
+	  jsr  $f483
+	  lda  #$41
+	  sta  $dc05
+	  lda  #$81
+	  sta  $dc0d
+	  lda  #<nmi-startbit
+	  sta  nmilo
+	  lda  #$21
+	  sta  788
+	  lda  #$91
+	  sta  789
+	  lda  #$fe
+	  sta  793
+	  lda  #$47
+	  sta  792
+	  lda  #44
+	  sta  $9210
+	  lda  #13
+	  sta  $9211
+	  lda  #220
+	  sta  $9212
+	  lda  #$0
+	  sta  $9c14
+	  lda  #$8d
+	  sta  $9c15
+	  lda  #$ad
+	  sta  $9c18
+	  lda  #$1
+	  sta  $9c70
+	  lda  #$e
+	  sta  $9c72
+	  rts
+
+	  pjp  rsin
+ilotab:	  @1$95
+	  @1$25
+ihitab:	  @1$42
+	  @1$40
+
+rsin:	  ldx  rd.rptr
+	  cpx  wr.rptr
+	  beq  emptybuf
+	  lda  recbuf,x
+	  inx
+	  stx  rd.rptr
+	  pha
+	  txa
+	  cl c
+	  sbc  wr.rptr
+	  cmp  #200
+	  bcc  noresetrts
+	  lda  #2
+	  ora  $dd01
+	  sta  $dd01
+	  cl c
+noresetrts:
+	  pla
+emptybuf: rts
+
+enable:	  se i
+	  ldx  absadrs+1
+	  ldy  absadrs+2
+	  stx  788
+	  sty  789
+	  ldx  absadrs+4
+	  ldy  absadrs+5
+	  ;  patch kernel
+	  lda  #$4c
+	  sta  $9210
+	  lda  #$81
+	  sta  $9211
+	  lda  #$ea
+	  sta  $9212
+	  lda  #$2
+	  sta  $9c14
+	  lda  #$2c
+	  sta  $9c15
+	  lda  #$8d
+	  sta  $9c18
+	  lda  #$82
+	  sta  $9c70
+	  lda  #$d
+	  sta  $9c72
+	  nmilo=#792
+	  stx  792
+	  sty  793
+	  ldx  $2a6
+	  lda  ilotab,x
+	  sta  $dc06
+	  lda  ihitab,x
+	  sta  $dc07
+	  txa
+	  asla
+	  xor  #$33
+	  ldx  #0
+	  sta  $dc04
+	  stx  $dc05
+	  asla
+	  ora  #1
+	  sta  $dd06
+	  stx  $dd07
+	  lda  #1
+	  sta  outstat
+	  sta  $dd0e
+	  lda  #$41
+	  sta  $dc0e
+	  lda  #$01
+	  sta  $dc0d
+	  sta  $dc0f
+	  lda  #$92
+	  sta  $dd0f
+	  lda  #$98
+	  bit  $dd0d
+	  sta  $dd0d
+	  lda  #$8a
+	  sta  $dc0d
+	  lda  #$ff
+	  sta  $dd01
+	  sta  $dc0c
+	  cl i
+txon:	  lda  #2
+	  sta  $dd03
+	  rts
+
+new.irq:  lda  $dc0d
+	  lsra
+	  lsra
+	  and  #2
+	  beq  re
+	  ldx  outstat
+	  beq  re
+	  dex
+	  stx  outstat
+	  bne  re
+	  php
+	  jsr  sndnx
+	  plp
+re:	  bcs  timerirq
+	  jmp  $ea81
+timerirq: jsr  $f6bc
+	  jsr  $ea87
+	  dec  $a2
+	  bpl  uu
+	  jsr  sndnx
+uu:	  jmp  lunix.irq
+
+sndnx:	  lda  $dd01
+	  and  #$40
+	  beq  ctswait
+	  ldx  rd.sptr
+	  cpx  wr.sptr
+	  beq  sempty
+	  lda  sndbuf,x
+	  inx
+	  stx  rd.sptr
+	  cmp  #128
+	  and  #127
+	  tax
+	  lda  revtab,x
+	  adc  #0
+	  lsra
+	  sta  $dc0c
+	  lda  #2
+	  sta  outstat
+	  lda  #4
+	  sta  $a2
+	  rora
+	  ora  #127
+	  sta  $dc0c
+	  rts
+ctswait:  lda  #10
+	  @1$2c
+sempty:	  lda  #128
+	  sta  $a2
+	  rts
+
+rsout:	  ldx  wr.sptr
+	  sta  sndbuf,x
+	  inx
+ww00:	  cpx  rd.sptr
+	  beq  ww00
+	  stx  wr.sptr
+	  lda  outstat
+	  bne  oks
+	  lda  #1
+	  sta  $a2
+oks:	  rts
+
+	  #add t9lab rsout enable disable rsin flags revtab
+	  #next t9.2
+
+------------------------------------------------------------
+*** FILE ".t9.2"
+
+	  #include t9lab
+	  #rm starter getlogin dothelogout convert sendchar
+	  pclose=$9027
+	  pinit=$9045
+	  popen=$9021
+	  setsup=$9048
+	  pload=$9063
+	  strout=$905d
+	  errout=$906c
+	  pipout=$902d
+	  pipin=$902a
+	  pipchk=$906f
+	  stdout=$9069
+	  ;   part2
+
+	  ;  wait for connect
+	  pjp  ovtext
+	  use1;byte;help;flg2
+logintxt: text "Welcome to the world of LUnix"
+	  @1#13
+	  text " This machine is a Commodore64"
+	  @1#13
+	  @1#13
+	  text "Login"
+	  @1#58
+	  @1#0
+logintxt2:@1#13
+	  text "Lets try to get a shell for you..."
+	  @1#13
+	  @1#0
+logmsgtxt1:
+	  text "*** RS232-login by"
+	  @1#32
+	  @1#0
+logmsgtxt2:
+	  text "*** RS232-logout"
+	  @1#13
+	  @1#0
+logerrtxt:text "Sorry! Try again later !"
+	  @1#13
+	  @1#0
+lerrtxt:  text "*** Couldn't exec @"
+	  @1#58
+	  text "sh0.exe"
+	  @1#13
+	  @1#0
+shtxt:	  text "sh0.exe"
+	  @1#0
+logendtxt:@1#13
+	  text "Connection closed."
+	  @1#13
+	  text "Press <enter> to reconnect."
+	  @1#13
+	  @1#0
+
+ovtext:	  @1$2c
+shptr:	  @2<shtxt
+
+starter:  jsr  getlogin
+
+	  ;   get shell
+
+	  ldx  shptr
+	  ldy  shptr+1
+	  lda  $c2b0
+	  jsr  pload
+	  bcc  okmore
+printerror:
+	  ldx  $c803
+	  jsr  strout
+	  bit  lerrtxt
+	  ldx  #0
+lllp5:	  lda  logerrtxt,x
+	  beq  llle5
+	  jsr  sendchar
+	  inx
+	  bne  lllp5
+llle5:	  jsr  dothelogout
+	  jmp  starter
+
+okmore:	  sta  byte
+	  lda  #0
+	  jsr  popen
+	  stx  sh.out
+	  lda  #$c0
+	  jsr  popen
+	  stx  sh.in
+	  ldx  byte
+	  txa
+	  ldy  #0
+	  jsr  setsup
+	  iny
+	  lda  sh.in
+	  jsr  setsup
+	  iny
+	  lda  sh.out
+	  jsr  setsup
+	  iny
+	  jsr  setsup
+	  ldy  #8
+	  lda  #0
+	  jsr  setsup
+	  lda  #1
+	  jsr  pinit
+	  bcc  okmore2
+	  jmp  printerror
+
+okmore2:  jmp  work!
+
+
+convert:  cmp  #8
+	  beq  repl20
+	  cmp  #20
+	  beq  repl8
+	  cmp  #65
+	  bcc  toreturn
+	  cmp  #96
+	  bcc  toadd32
+	  cmp  #128
+	  bcc  tosub31
+	  cmp  #192
+	  bcc  toreturn
+	  sbc  #128
+toreturn: rts
+toadd32:  adc  #32
+	  rts
+tosub31:  sbc  #31
+	  rts
+repl8:	  lda  #8
+	  @1$2c
+repl20:	  lda  #20
+	  rts
+
+
+sendchar: sta  help
+	  txa
+	  pha
+	  tya
+	  pha
+	  lda  help
+	  cmp  #13
+	  beq  sendcrlf
+	  jsr  convert
+oob:	  jsr  rsout
+	  pla
+	  tay
+	  pla
+	  tax
+	  lda  help
+	  rts
+sendcrlf: lda  #13
+	  jsr  rsout
+	  lda  #10
+	  jmp  oob
+
+getlogin: ;   send out the login message
+	  lda  #10
+	  sta  help
+liw:	  jsr  break
+	  dec  help
+	  bne  liw
+	  jsr  roll
+	  ldx  #0
+lllp1:	  lda  logintxt,x
+	  beq  edl1txt
+	  jsr  sendchar
+	  inx
+	  bne  lllp1
+edl1txt:  sta  help
+lnww:	  jsr  break
+lnw:	  rsin
+	  bcs  lnww
+	  cmp  #13
+	  beq  oeln
+	  ldx  help
+	  cpx  #8
+	  beq  onlech
+	  sta  username,x
+	  inx
+	  stx  help
+onlech:	  jsr  rsout
+	  jmp  lnw
+oeln:	  ldx  help
+	  lda  #0
+	  sta  username,x
+	  lda  #13
+	  jsr  sendchar
+	  lda  username
+	  bne  isali
+	  jmp  getlogin
+roll:	  lda  #50
+	  sta  username
+lllp2:	  lda  #13
+	  jsr  sendchar
+	  dec  username
+	  bne  lllp2
+	  rts
+isali:	  ldx  #0
+lllp3:	  lda  logintxt2,x
+	  beq  llle3
+	  jsr  sendchar
+	  inx
+	  bne  lllp3
+llle3:	  bit  flags
+	  bpl  eeeee
+	  ldx  $c802
+	  jsr  strout
+	  bit  logmsgtxt1
+	  ldx  $c802
+	  jsr  strout
+	  bit  username
+	  lda  #13
+	  jmp  stdout
+eeeee:	  rts
+
+dothelogout:
+	  ldx  #0
+lllp4:	  lda  logendtxt,x
+	  beq  llle4
+	  jsr  sendchar
+	  inx
+	  bne  lllp4
+llle4:	  lda  #4
+	  ldx  sh.in
+	  jsr  pipout
+	  ldx  sh.in
+	  jsr  pclose
+	  ldx  sh.out
+	  jsr  pclose
+	  lda  #0
+	  sta  sh.in
+	  sta  sh.out
+	  cl i
+	  bit  flags
+	  bpl  eeeee
+	  ldx  $c802
+	  jsr  strout
+	  bit  logmsgtxt2
+	  rts
+
+work!:	  lda  #0
+	  sta  flg2
+	  rsin
+	  bcs  nochar0
+	  cmp  #13
+	  beq  pass0
+	  cmp  #4
+	  beq  pass0
+	  cmp  #8
+	  beq  pass0
+	  cmp  #20
+	  beq  pass0
+	  cmp  #32
+	  bcc  nochar0
+	  jsr  convert
+pass0:	  sta  flg2
+	  ldx  sh.in
+	  jsr  pipout
+	  cl i
+	  bcs  disconn
+nochar0:  ldx  sh.out
+	  jsr  $906f
+	  bcs  disconn
+	  beq  work00
+	  ldx  sh.out
+	  jsr  pipin
+	  cl i
+	  bcs  disconn
+	  sta  flg2
+	  jsr  sendchar
+work00:	  lda  flg2
+	  bne  work!
+	  jsr  break
+	  jmp  work!
+disconn:  jsr  dothelogout
+	  jmp  starter
+
+
+	  #add t9lab starter getlogin dothelogout convert sendchar
+	  #next t9.3
+
+------------------------------------------------------------
+*** FILE ".t9.3"
+
+	  #include t9lab
+	  #rm install
+
+	  pclose=$9027
+	  pinit=$9045
+	  popen=$9021
+	  setsup=$9048
+	  pload=$9063
+	  strout=$905d
+	  errout=$906c
+	  pipout=$902d
+	  pipin=$902a
+	  pipchk=$906f
+
+
+	  pjp  ovtxt
+instok:	  text "*** RS232-Installation completed"
+	  @1#13
+	  text "***  Settings - 9600 Baud - 8N1"
+	  @1#13
+	  @1#0
+instfailed:
+	  text "*** RS232-Installation failed !"
+	  @1#13
+	  @1#0
+instnoint:text "*** RS232-can't find RS232-Interface"
+	  @1#13
+	  @1#0
+instlocked:
+	  text "*** RS232-userport is locked"
+	  @1#13
+	  @1#0
+howtotxt: text "USAGE- (Poldi 14.12.1995 V1.0)"
+	  @1#13
+	  text "  term9600 {-v}"
+	  @1#13
+	  text "    v  verbose mode"
+	  @1#13
+	  text "	print login- and logoutmessage"
+	  @1#13
+	  text "    note"
+	  @1#58
+	  text " should be started as"
+	  @1#13
+	  text "	  backgroud process"
+	  @1#13
+	  @1#0
+
+	  use1;hlp2
+ovtxt:
+install:  se i
+	  ldy  #0
+	  sty  hlp
+	  sty  flags
+	  lda  $c808
+	  beq  eop
+	  sta  hlp+1
+more:	  iny
+	  lda  (hlp),y
+	  beq  eop
+	  cmp  #32
+	  beq  more
+	  cmp  #asc(-)
+	  bne  howto
+more2:	  iny
+	  lda  (hlp),y
+	  cmp  #asc(v)
+	  bne  howto
+	  lda  #128
+	  sta  flags
+	  jmp  more
+howto:	  cl i
+	  ldx  $c803
+	  jsr  strout
+	  bit  howtotxt
+	  jmp  $901b
+eop:	  cl i
+	  lda  #$7f
+	  sta  $dd0d
+	  lda  #$80
+	  sta  $dd03
+	  sta  $dd0e
+	  sta  $dd0f
+	  bit  $dd0d
+	  ldx  #8
+@@@:	  stx  $dd01
+	  sta  $dd01
+	  dex
+	  bne  @@@
+	  lda  $dd0d
+	  and  #8
+	  beq  nointerface
+	  ;   install terminal-service
+	  ;   try to get userport
+	  se i
+	  lda  $c26a
+	  bne  noport
+	  lda  #$ff
+	  sta  $c26a
+	  sta  $c806
+	  ;   check IRQ-vector
+	  lda  #$91
+	  cmp  789
+	  bne  failed1
+	  jsr  enable
+	  ldx  $c802
+	  jsr  strout
+	  bit  instok
+	  ;  free unused parameter-page
+	  se i
+	  lda  $c808
+	  ldx  #0
+	  stx  $c808
+	  jsr  $9075
+	  cl i
+	  ldx  #0
+*:	  stx  hlp2
+	  ldy  #8
+**:	  asl  hlp2
+	  rora
+	  dey
+	  bne  **
+	  sta  revtab,x
+	  inx
+	  bpl  *
+	  jmp  starter
+nointerface:
+	  ldx  $c803
+	  jsr  strout
+	  bit  instnoint
+	  jmp  failed
+noport:	  ldx  $c803
+	  jsr  strout
+	  bit  instlocked
+	  jmp  failed
+failed1:  lda  #0
+	  sta  $c26a
+failed:	  ldx  $c803
+	  jsr  strout
+	  bit  instfailed
+	  lda  #255
+	  jmp  $901b
+
+
+	  @1#2
+ende:
+	  #add t9lab install
+	  #next
+

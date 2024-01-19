@@ -1,0 +1,67 @@
+NAME
+       xargs  -  build  and  execute  command lines from standard
+       input
+
+SYNTAX
+       xargs [-ct] [-l max-lines] 
+
+DESCRIPTION
+       This manual page  documents the LUnix  version  of  xargs.
+       xargs  reads  arguments from the standard input, delimited
+       by blanks  or newlines,  and executes  the command  one or
+       more  times  with   any   initial-arguments   followed  by 
+       arguments read from standard input.
+
+OPTIONS
+       -c
+              Cache command code, to speed up execution, when the
+              command has to be executed many times.
+              
+       -t
+              Print the command line on the standard error output
+              before executing it.
+                                           
+       -l max-lines
+              Use at most max-lines input lines per command line;
+              max-lines defaults to 255 if omitted.
+
+RESTRICTIONS
+       Xargs  might cause  a dead-lock  if in cache-mode  and the 
+       command to big to fit twice in main memory.
+       The  created  argument  list  is limited to 254 characters 
+       including spaces.
+       
+EXAMPLES
+       xargs -cl1 @:echo
+              Will  call echo  for every  input line  on standard 
+              input.
+
+       xargs @:echo collected:
+              Will  call  echo  once  with  all  text  read  from 
+              standard   input  until  CTRL+d   or  EOF  and  the
+              string "collected:" in front.
+
+begin 644 xargs
+M__\``00`Q-D$`!Q`````````````````````````````````````````````
+M`````````````````%A!4D=3````J1`@49!,2!"M"!#P/87:H`"$V<CP-+'9
+M\##)(/#UR2W06LCP);'9R4/P+<E4\"S)3/`^R7#P+\D_\`_)2/`+R2WPW\D@
+M\,Q,O!"N`Q`@79`LLQ*I_TP8D*E`+*F`#8,2C8,23&(0(!`2L-^-AA),5!`@
+M$!*PU(V%$DQ4$(R8$\CPR+'9\!;)(-#UJ0"1V<CP"['9\`?)(/#UC(@2J0$@
+M<I"%W*``A-N8D=OFVZV($H79K0@0A=J@`+'9\`B1V\C0]TPP$:D@D=O(\"6M
+MA1*-F1,@9I"0#:E`>`V$$HV$$EA,11')!/#OR0WP$Y';R-#AK@,0(%V0+'L3
+MJ?\@&)"I(,Z9$]#FJ0"1VZ7<C9H3+(,2$`,@3A(@G1&@`*H@2)#(J0`@2)#(
+MK0(0($B0R*T#$"!(D*V:$Z`(($B0J00@19"P"*V$$M`13-P0K@,0(%V0+%H3
+MJ?],&)"I`$P8D*D@+(,2\">MEQ,@<I!(A=R@`(39A-NMEA.%VJZ7$['9D=O(
+MT/GFVN;<RM#R:&"FVZP($"!.D)`(IMNL"!"ML,(@8Y"0#JX#$"!=D"PW$ZG_
+M3!B0+(,24-6-EA.@`*KHR-T`Q/#YC)<3J2`-@Q*-@Q),G1&I`(7;R/`UL=GP
+M,<D@\/4XZ3"0),D*L"!(I=O)&K`="@IEVPJ%VVAEVX7;L`_(\`RQV?`$R2#0
+MUZ7;&&`X8*V8$X79K0@0A=J@`+'9\`8@;)#(T/:I("!LD*V:$X7:H`"$V<BQ
+MV?`&(&R0R-#VJ0U,;)`"``#_`0``)%9%4CH@6$%21U,@,"XY(&9%0B`R,R`Q
+M,CHQ,3HU,R!M970@,3DY-R0`6$%21U,@5D524TE/3B`P+CD-=5-!1T4Z(%A!
+M4D=3(%LM0U1=(%LM3"!-05@M3$E.15-=#2`@("`@("!#3TU-04Y$(%M)3DE4
+M24%,+4%21U5-14Y44UT-("`M0R!#04-(12!#3TU-04Y$($-/1$4-("`M5"!4
+M65!%(%1/(%-41$524@T`6$%21U,Z($-/54Q$3B=4($Q/040@0T]-34%.1"!#
+M3T1%#0!805)'4SH@0T]53$1.)U0@15A%0U5412!#3TU-04Y$#0!805)'4SH@
+45$]/($U!3ED@05)'54U%3E13#0``
+`
+end

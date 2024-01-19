@@ -1,0 +1,220 @@
+UUencoded binary of Ilker Ficicilar's ED-pre-release.
+
+Send bug reports to:  filker@newton.physics.metu.edu.tr
+
+Kown Bugs (as announced from the author):
+
+1. Non-deallocation of one page of memory after any type of exit. 
+
+2. Duplication of newline characters. If you view a text with some empty 
+lines, you will notice that they are printed twice. This bug belongs to 
+the printline routine. Your data is not corrupted.
+
+3. Sudden escape to command mode when viewing last lines of a long 
+document. I didn't understand its source yet.
+
+--------cut here for documentation--------------------------
+
+
+ED LINE EDITOR FOR LUNIX
+------------------------
+
+
+by Ilker Ficicilar
+   filker@newton.physics.metu.edu.tr
+   e068214@orca.cc.metu.edu.tr
+
+February 1997
+
+Version 0.1 alpha
+
+
+usage:  ed [file-name]
+
+
+   ED editor is coded mainly for the CLI ( Command Line Interface ) shells,
+which are only capable of simple keyboard activities, such as spacing and
+backspacing along a line. All implementations of ED has two modes; command 
+mode and entry mode. The command mode can be identified with the colon 
+character on the left, and it is the mode you are in when ED starts. 
+
+   Entry mode is used to enter a maximum of 254 characters of line into the 
+text buffer, which is held in the internal memory. To enter the entry mode
+one of the 'a' or 'i' commands can be used. Each time you pressed the return 
+key in the entry mode you begin to enter next line of text. After editing 
+one can return to the command mode by simply issuing a '.' (period) 
+character as the first and only character of a line. And to obtain some dots
+in the begining of a line you have to enter one more dot.
+
+   In the command mode you can select any of the text line as the current 
+line by entering its number. And if you continuously press the return key 
+you see and advance the current line by one. You can learn which line is 
+the current line by '=' command, and see its content by '.' command. The
+'-' command selects the previous line, while '+' selects the next line.
+
+   To see one screen of text, 'z' command can be used. Entering only 'z' or 
+'z+' prints next 24 lines, and 'z-' prints previous 24 lines, while 'z.'
+prints previous and next 11 lines to the stdout. Issuing 'z' command with
+a preceeding number sets the current line to that number then executes 
+the 'z' command. For example '100z' shows lines 100 through 123, and '1,100z'
+shows lines 1 through 100.
+
+   Deleting the current line can be achieved using the 'd' command. If you
+enter this 'd' command successively you can delete following lines. But 
+if the current line is the last line, 'd' command deletes previos lines.
+Current implementation does not support the range delete case.
+
+   If the ED command is used with a file name of an existing (valid) file,
+this file is loaded at the start and this name is used as the document's
+name. If this is not the case you can read a file by 'r <file-name>' 
+command. And after giving a document name with 'f [name]' command you can
+write the document to the disk by 'w' command. Issuing 'f' without a 
+parameter shows the name of the document if exist.
+
+   To leave the ED you can use one of the three ways. Entering 'x' command
+saves the document and then exits. 'q' command quits without saving. And
+stop, break or ^C keys terminates the ED urgently.
+
+
+
+   A brief summary of implemented commands are below:
+
+
+
+
+i : Switching to entry mode by inserting before the current line.
+
+a : Switching to entry mode by inserting after the current line.
+
+. : I command mode shows the current line. In entry mode switches to
+   command mode
+
+= : Shows the number of the current line
+
++ : Steps to next line ( same as return key )
+
+- : Steps to previous line
+
+z : Views 24 lines of text ( versions are : z+ z- z. #z[+-.] #,#z[+-.] )
+
+d : Deletes the current line
+
+r : Reads a petscii text file ( r <file-name> )
+
+f : Views or sets the document name to be used when saving.
+
+w : Save the document
+
+x : Save and exit
+
+q : Quit
+
+stop : Terminate
+
+
+
+   Thats all for now. Future versions will include more commands and 
+features. Also current implementation is somehow buggy and slow, so do not
+trust it too much.
+
+
+Ilker Ficicilar
+
+filker@newton.physics.metu.edu.tr
+
+
+---------------------CUT HERE--------------------------------------------  
+
+begin 644 ed
+M__\``1``)QD3`"Q`````````````````````````````````````````````
+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
+MG4QID````@``````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M`````````````````````````````````````````$1:5U`-````````````
+M``````````````````````````````````````````````!DR"R0]%B\((0`
+M```````````!`0$"`@,#`````````.C0N*"(<%A`*``````````#!PL/$Q<;
+M'R,`````````$"`P0%!@`````````````"=.=9S#Z@````````````$"!`@0
+M($"```````````#_____``````````#__P``````\/_______________P``
+M````````````````````````````````````````````````````````````
+M```````````````````````-3D]4($E-4$Q%345.5$5$(%E%5"`-````````
+M``````U.3TXM24U03$5-14Y4140@1D5!5%5212`-````````#5)53BU424U%
+M($524D]2(`T`#4E.4%54+T]55%!55"!%4E)/4@T`````````````````````
+*`````````````$E.
+`
+end
+
